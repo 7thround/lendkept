@@ -1,0 +1,87 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model Loan {
+  id         String   @default(cuid()) @id
+  address    String
+  details    String
+  phone      String
+  status     LoanStatus
+  paid       Boolean  @default(false)
+  partner    Partner  @relation(fields: [partnerId], references: [id])
+  partnerId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  companyId  String
+  messages   Message[]
+}
+
+model Partner {
+  id                  String   @default(cuid()) @id
+  name                String
+  address             String
+  email               String   @unique
+  phone               String
+  referralCode        String
+  referringPartner    Partner? @relation("Referrals", fields: [referringPartnerId], references: [id])
+  referringPartnerId  String? 
+  referredPartners    Partner[] @relation("Referrals")
+  company             Company  @relation(fields: [companyId], references: [id])
+  companyId           String
+  loans               Loan[]
+  messages            Message[]
+  user                User?
+}
+
+model Company {
+  id           String   @default(cuid()) @id
+  name         String
+  logo         String?
+  defaultBonus Int
+  address      String
+  phone        String
+  partners     Partner[]
+  loans        Loan[]
+  users        User[]
+}
+
+model Message {
+  id        String   @default(cuid()) @id
+  content   String
+  loan      Loan     @relation(fields: [loanId], references: [id])
+  loanId    String
+  sender    Partner  @relation(fields: [senderId], references: [id])
+  senderId  String
+}
+
+model User {
+  id        String   @default(cuid()) @id
+  email     String   @unique
+  password  String
+  role      Role     @default(PARTNER)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  partnerId String?  @unique
+  partner   Partner? @relation(fields: [partnerId], references: [id])
+}
+
+enum Role {
+  ADMIN
+  COMPANY
+  PARTNER
+}
+
+enum LoanStatus {
+  SUBMITTED
+  PROCESSING
+  FUNDED
+  CANCELLED
+}
