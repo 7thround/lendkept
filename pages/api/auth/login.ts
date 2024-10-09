@@ -1,7 +1,7 @@
-// src/pages/api/auth/login.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import cookie from "cookie";
 import prisma from "../../../lib/prisma";
 
 export default async function handler(
@@ -28,5 +28,16 @@ export default async function handler(
     { expiresIn: "1h" }
   );
 
-  res.status(200).json({ token });
+  res.setHeader(
+    "Set-Cookie",
+    cookie.serialize("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV !== "development",
+      maxAge: 3600, // 1 hour
+      sameSite: "strict",
+      path: "/",
+    })
+  );
+
+  res.status(200).json({ message: "Login successful" });
 }

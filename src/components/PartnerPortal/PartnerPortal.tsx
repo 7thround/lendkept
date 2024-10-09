@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
+import LogoutButton from "../LogoutButton";
 
-const Portal = () => {
+const PartnerPortal = () => {
   const [loans, setLoans] = useState([
     {
       id: 1,
@@ -18,12 +19,6 @@ const Portal = () => {
     // Add more messages as needed
   ]);
 
-  const [companyDetails, setCompanyDetails] = useState({
-    name: "",
-    address: "",
-    phone: "",
-  });
-
   const [partners, setPartners] = useState([
     {
       id: 1,
@@ -32,6 +27,13 @@ const Portal = () => {
       phone: "555-555-5555",
     },
     // Add more partners as needed
+  ]);
+
+  const [referralCode, setReferralCode] = useState("REF12345");
+  const [referralBonuses, setReferralBonuses] = useState([
+    { name: "John Doe", amount: 250 },
+    { name: "Jane Smith", amount: 500 },
+    // Add more referral bonuses as needed
   ]);
 
   const handleStatusChange = (loanId, newStatus) => {
@@ -47,13 +49,13 @@ const Portal = () => {
     setMessage("");
   };
 
-  const handleUpdateDetails = (e) => {
-    e.preventDefault();
-    // Implement update logic here
-  };
-
   const handleProcessPayouts = () => {
     // Implement payout processing logic here
+  };
+
+  const handleSubmitReferral = (e) => {
+    e.preventDefault();
+    // Implement referral submission logic here
   };
 
   return (
@@ -61,10 +63,11 @@ const Portal = () => {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="flex items-center gap-4 mx-auto py-4 px-4 sm:px-4 lg:px-8">
-          <div className="inline-flex items-center justify-center bg-slate-400 h-10 w-10 text-white rounded-lg">
+          <div className="inline-flex items-center justify-center bg-slate-400 h-10 w-10  text-white rounded-lg">
             JJ
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Company Portal</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Partner Portal</h1>
+          <LogoutButton />
         </div>
       </header>
 
@@ -72,10 +75,10 @@ const Portal = () => {
         <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Left Column */}
           <div className="flex-grow flex flex-col space-y-4">
-            {/* Loans Panel */}
+            {/* My Loans Panel */}
             <div className="bg-white shadow rounded-lg py-4 flex flex-col flex-grow">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 px-4">
-                Loans
+                My Loans
               </h2>
               <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
                 <table className="min-w-full bg-white">
@@ -109,7 +112,8 @@ const Portal = () => {
                         </td>
                         <td className="py-2 px-4 whitespace-nowrap">
                           <select
-                            className="border border-gray-300 rounded-lg p-2"
+                            disabled
+                            className=" rounded-lg p-2 brightness-95"
                             value={loan.status}
                             onChange={(e) =>
                               handleStatusChange(loan.id, e.target.value)
@@ -127,8 +131,11 @@ const Portal = () => {
                           {loan.partner}
                         </td>
                         <td className="py-2 px-4 whitespace-nowrap">
-                          <button className="text-indigo-400 hover:text-indigo-900">
+                          <button className="text-indigo-400 hover:text-indigo-900 mr-2">
                             <EyeIcon className="h-5 w-5" />
+                          </button>
+                          <button className="text-red-400 hover:text-red-900">
+                            <TrashIcon className="h-5 w-5" />
                           </button>
                         </td>
                       </tr>
@@ -138,10 +145,10 @@ const Portal = () => {
               </div>
             </div>
 
-            {/* Partners Panel */}
+            {/* Referred Partners Panel */}
             <div className="bg-white shadow rounded-lg py-4 flex flex-col flex-grow">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 px-4">
-                Partners
+                Partner Referrals
               </h2>
               <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
                 <table className="min-w-full bg-white">
@@ -180,11 +187,8 @@ const Portal = () => {
                           {partner.phone}
                         </td>
                         <td className="py-2 px-4 whitespace-nowrap">
-                          <button className="text-indigo-400 hover:text-indigo-900 mr-2">
+                          <button className="text-indigo-400 hover:text-indigo-900">
                             <EyeIcon className="h-5 w-5" />
-                          </button>
-                          <button className="text-red-400 hover:text-red-900">
-                            <TrashIcon className="h-5 w-5" />
                           </button>
                         </td>
                       </tr>
@@ -197,122 +201,92 @@ const Portal = () => {
 
           {/* Right Column */}
           <div className="flex flex-col space-y-4 w-full lg:w-1/3">
-            {/* Company Details Panel */}
+            {/* Referral Program Panel */}
+            <div className="bg-white shadow rounded-lg p-4">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                Referral Program
+              </h3>
+              <div>
+                <label className="block text-gray-700">
+                  Share your referral code:
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-gray-300 rounded-lg p-2"
+                  value={referralCode}
+                  readOnly
+                />
+                <button className="mt-2 bg-yellow-500 text-white py-1 px-2 rounded-lg">
+                  Copy Link
+                </button>
+              </div>
+            </div>
+            {/* Submit Loan Referral Panel */}
             <div className="bg-white shadow rounded-lg p-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Company Details
+                Submit a Loan
               </h2>
-              <form onSubmit={handleUpdateDetails}>
+              <form onSubmit={handleSubmitReferral}>
                 <div className="mb-4">
-                  <label className="block text-gray-700">Company Name</label>
+                  <label className="block text-gray-700">Applicant Name</label>
                   <input
                     type="text"
                     className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="Company Name"
-                    value={companyDetails.name}
-                    onChange={(e) =>
-                      setCompanyDetails({
-                        ...companyDetails,
-                        name: e.target.value,
-                      })
-                    }
+                    placeholder="John Doe"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-gray-700">Address</label>
+                  <label className="block text-gray-700">Phone Number</label>
                   <input
                     type="text"
                     className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="Address"
-                    value={companyDetails.address}
-                    onChange={(e) =>
-                      setCompanyDetails({
-                        ...companyDetails,
-                        address: e.target.value,
-                      })
-                    }
+                    placeholder="555-555-5555"
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block text-gray-700">Phone</label>
+                  <label className="block text-gray-700">
+                    Property Address
+                  </label>
                   <input
                     type="text"
                     className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="Phone"
-                    value={companyDetails.phone}
-                    onChange={(e) =>
-                      setCompanyDetails({
-                        ...companyDetails,
-                        phone: e.target.value,
-                      })
-                    }
+                    placeholder="123 Main St, City, State"
                   />
                 </div>
-                <button className="bg-green-500 text-white py-2 px-4 rounded-lg">
-                  Update Details
+                <div className="mb-4">
+                  {/* <label className="block text-gray-700">Loan details</label> */}
+                  <textarea
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                    placeholder="Additional Information"
+                  ></textarea>
+                </div>
+                <button className="bg-blue-500 text-white py-2 px-4 rounded-lg">
+                  Submit
                 </button>
               </form>
             </div>
-
-            {/* Payouts Panel */}
+            {/* Referral Bonuses Panel */}
             <div className="bg-white shadow rounded-lg p-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Payouts
+                Referral Bonuses
               </h2>
-              <p>Manage your partner payouts here.</p>
-              <button
-                className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-lg"
-                onClick={handleProcessPayouts}
-              >
-                Process Payouts
-              </button>
+              <ul className="divide-y divide-gray-200">
+                {referralBonuses.map((bonus, index) => (
+                  <li
+                    key={index}
+                    className="py-2 flex justify-between items-center"
+                  >
+                    <span>{bonus.name}</span>
+                    <span className="text-green-500">${bonus.amount}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
-        </div>
-
-        {/* Message Center Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Message Center
-          </h2>
-          <textarea
-            className="w-full border border-gray-300 rounded-lg p-2"
-            rows={5}
-            placeholder="Type your message here..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          ></textarea>
-          <button
-            className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-lg"
-            onClick={handleSendMessage}
-          >
-            Send Message
-          </button>
-          <h3 className="text-xl font-semibold text-gray-900 mt-4 mb-4">
-            Message History
-          </h3>
-          <ul className="divide-y divide-gray-200">
-            {messageHistory.map((msg, index) => (
-              <li
-                key={index}
-                className="py-2 flex justify-between items-center"
-              >
-                <span>{msg}</span>
-                <div>
-                  <button className="text-indigo-400 hover:text-indigo-900 mr-2">
-                    Edit
-                  </button>
-                  <button className="text-red-400 hover:text-red-900">
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
         </div>
       </main>
     </div>
   );
 };
 
-export default Portal;
+export default PartnerPortal;

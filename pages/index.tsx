@@ -1,57 +1,58 @@
 import React from "react";
-import { GetStaticProps } from "next";
+import { Role } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import cookie from "cookie";
+import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
+import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
 import Layout from "../components/Layout";
-import Post, { PostProps } from "../components/Post";
-import prisma from "../lib/prisma";
 
-// export const getStaticProps: GetStaticProps = async () => {
-//   // const feed = await prisma.post.findMany({
-//   //   where: { published: true },
-//   //   include: {
-//   //     author: {
-//   //       select: { name: true },
-//   //     },
-//   //   },
-//   // });
-//   // return {
-//   //   props: { feed },
-//   //   revalidate: 10,
-//   // };
-// };
+export const getServerSideProps = async (context) => {
+  try {
+    const { req } = context;
+    const cookies = req.headers.cookie;
+    const parsedCookies = cookie.parse(cookies || "");
+    const token = parsedCookies.token;
 
-type Props = {
-  feed: PostProps[];
+    if (!token) {
+      return {
+        redirect: {
+          destination: "/login",
+          permanent: false,
+        },
+      };
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+      userId: number;
+      role: string;
+    };
+
+    return {
+      props: {
+        userId: decoded.userId,
+        role: decoded.role,
+      },
+    };
+  } catch (error) {
+    console.error("Error verifying user:", error);
+
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
 };
 
-const Blog: React.FC<Props> = (props) => {
+type Props = {
+  role: Role;
+};
+
+const Home: React.FC<Props> = ({ role }: Props) => {
   return (
-    <Layout>
-      <div className="page">
-        <h1>Public Feed</h1>
-        <main>
-          {props.feed.map((post) => (
-            <div key={post.id} className="post">
-              <Post post={post} />
-            </div>
-          ))}
-        </main>
-      </div>
-      <style jsx>{`
-        .post {
-          background: white;
-          transition: box-shadow 0.1s ease-in;
-        }
-
-        .post:hover {
-          box-shadow: 1px 1px 3px #aaa;
-        }
-
-        .post + .post {
-          margin-top: 2rem;
-        }
-      `}</style>
-    </Layout>
+    <main>{role === "PARTNER" ? <PartnerPortal /> : <CompanyPortal />}</main>
   );
 };
 
-export default Blog;
+export default Home;

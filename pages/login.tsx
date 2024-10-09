@@ -1,4 +1,3 @@
-// src/pages/login.tsx
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
@@ -11,9 +10,8 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await axios.post("/api/auth/login", { email, password });
-      localStorage.setItem("token", data.token);
-      router.push("/dashboard");
+      await axios.post("/api/auth/login", { email, password });
+      router.push("/");
     } catch (error) {
       console.error(error);
     }

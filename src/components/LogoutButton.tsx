@@ -1,11 +1,11 @@
-// src/components/LogoutButton.tsx
 import { useRouter } from "next/router";
+import cookie from "js-cookie";
 
 const LogoutButton = () => {
   const router = useRouter();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    cookie.remove("token");
     router.push("/login");
   };
 
