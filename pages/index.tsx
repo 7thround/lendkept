@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import cookie from "cookie";
 import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
 import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
-import Layout from "../components/Layout";
 
 export const getServerSideProps = async (context) => {
   try {
