@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
-import LogoutButton from "../LogoutButton";
+import { useRouter } from "next/router";
 
 const PartnerPortal = () => {
+  const router = useRouter();
   const [loans, setLoans] = useState([
     {
       id: 1,
@@ -60,18 +61,7 @@ const PartnerPortal = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="flex items-center gap-4 mx-auto py-4 px-4 sm:px-4 lg:px-8">
-          <div className="inline-flex items-center justify-center bg-slate-400 h-10 w-10  text-white rounded-lg">
-            JJ
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Partner Portal</h1>
-          <LogoutButton />
-        </div>
-      </header>
-
-      <main className="flex-grow p-4 sm:px-4 lg:px-8 flex flex-col space-y-4">
+      <main className="flex-grow p-4 flex flex-col space-y-4">
         <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Left Column */}
           <div className="flex-grow flex flex-col space-y-4">
@@ -131,11 +121,11 @@ const PartnerPortal = () => {
                           {loan.partner}
                         </td>
                         <td className="py-2 px-4 whitespace-nowrap">
-                          <button className="text-indigo-400 hover:text-indigo-900 mr-2">
+                          <button
+                            onClick={() => router.push(`/loans/${loan.id}`)}
+                            className="text-indigo-400 hover:text-indigo-900 mr-2"
+                          >
                             <EyeIcon className="h-5 w-5" />
-                          </button>
-                          <button className="text-red-400 hover:text-red-900">
-                            <TrashIcon className="h-5 w-5" />
                           </button>
                         </td>
                       </tr>
@@ -221,6 +211,23 @@ const PartnerPortal = () => {
                 </button>
               </div>
             </div>
+            {/* Referral Bonuses Panel */}
+            <div className="bg-white shadow rounded-lg p-4">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Referral Bonuses
+              </h2>
+              <ul className="divide-y divide-gray-200">
+                {referralBonuses.map((bonus, index) => (
+                  <li
+                    key={index}
+                    className="py-2 flex justify-between items-center"
+                  >
+                    <span>{bonus.name}</span>
+                    <span className="text-green-500">${bonus.amount}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
             {/* Submit Loan Referral Panel */}
             <div className="bg-white shadow rounded-lg p-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -264,23 +271,6 @@ const PartnerPortal = () => {
                   Submit
                 </button>
               </form>
-            </div>
-            {/* Referral Bonuses Panel */}
-            <div className="bg-white shadow rounded-lg p-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Referral Bonuses
-              </h2>
-              <ul className="divide-y divide-gray-200">
-                {referralBonuses.map((bonus, index) => (
-                  <li
-                    key={index}
-                    className="py-2 flex justify-between items-center"
-                  >
-                    <span>{bonus.name}</span>
-                    <span className="text-green-500">${bonus.amount}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
           </div>
         </div>

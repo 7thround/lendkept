@@ -10,20 +10,6 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
-model Loan {
-  id         String   @default(cuid()) @id
-  address    String
-  details    String
-  phone      String
-  status     LoanStatus
-  paid       Boolean  @default(false)
-  partner    Partner  @relation(fields: [partnerId], references: [id])
-  partnerId  String
-  company    Company  @relation(fields: [companyId], references: [id])
-  companyId  String
-  messages   Message[]
-}
-
 model Partner {
   id                  String   @default(cuid()) @id
   name                String
@@ -79,9 +65,47 @@ enum Role {
   PARTNER
 }
 
+
+model Loan {
+  id           String     @default(cuid()) @id
+  clientName   String
+  clientPhone  String
+  clientEmail  String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  zip          String
+  loanType     LoanType
+  loanAmount   Float
+  status       LoanStatus
+  paid         Boolean    @default(false)
+  partner      Partner    @relation(fields: [partnerId], references: [id])
+  partnerId    String
+  company      Company    @relation(fields: [companyId], references: [id])
+  companyId    String
+  messages     Message[]
+}
+
+enum LoanType {
+  SBA
+  HOME_PURCHASE
+  REFINANCE
+}
+
 enum LoanStatus {
-  SUBMITTED
-  PROCESSING
-  FUNDED
+  APPLICATION
+  RUN_CREDIT
+  BORROWER_DOCUMENTS
+  LOAN_SUBMITTED
+  DISCLOSURES_SENT
+  APPRAISAL
+  CONDITIONAL_APPROVAL
+  SUBMITTED_TO_UNDERWRITING
+  FINALS_CLOSING_DISCLOSURE
+  LOAN_DOCS_SUBMITTED
+  LOAN_FUNDED
+  ON_HOLD
   CANCELLED
+  NOT_QUALIFIED
 }

@@ -1,14 +1,28 @@
 import { useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import LogoutButton from "../LogoutButton";
+import { useRouter } from "next/router";
 
 const CompanyPortal = () => {
+  const router = useRouter();
   const [loans, setLoans] = useState([
     {
       id: 1,
       address: "123 Main St",
       status: "PROCESSING",
       partner: "John Doe",
+    },
+    {
+      id: 2,
+      address: "456 Elm St",
+      status: "FUNDED",
+      partner: "Jane Doe",
+    },
+    {
+      id: 3,
+      address: "789 Oak St",
+      status: "CANCELLED",
+      partner: "John Smith",
     },
     // Add more loans as needed
   ]);
@@ -59,18 +73,7 @@ const CompanyPortal = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="flex items-center gap-4 mx-auto py-4 px-4 sm:px-4 lg:px-8">
-          <div className="inline-flex items-center justify-center bg-slate-400 h-10 w-10 text-white rounded-lg">
-            JJ
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Company Portal</h1>
-          <LogoutButton />
-        </div>
-      </header>
-
-      <main className="flex-grow p-4 sm:px-4 lg:px-8 flex flex-col space-y-4">
+      <main className="flex-grow p-4 flex flex-col space-y-4">
         <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           {/* Left Column */}
           <div className="flex-grow flex flex-col space-y-4">
@@ -129,7 +132,10 @@ const CompanyPortal = () => {
                           {loan.partner}
                         </td>
                         <td className="py-2 px-4 whitespace-nowrap">
-                          <button className="text-indigo-400 hover:text-indigo-900">
+                          <button
+                            className="text-indigo-400 hover:text-indigo-900"
+                            onClick={() => router.push(`/loans/${loan.id}`)}
+                          >
                             <EyeIcon className="h-5 w-5" />
                           </button>
                         </td>
