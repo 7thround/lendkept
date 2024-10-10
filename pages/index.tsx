@@ -33,7 +33,7 @@ export const getServerSideProps = async (context) => {
       },
     };
   } catch (error) {
-    console.error("Error verifying user:", error);
+    console.error("Error verifying the user:", error);
 
     return {
       redirect: {
