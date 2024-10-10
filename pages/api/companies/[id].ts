@@ -1,9 +1,15 @@
-// src/pages/api/companies/[id].ts
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextApiResponse, NextApiRequest } from "next";
 import prisma from "../../../lib/prisma";
 import { authenticate, authorize } from "../../../src/middleware/auth";
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+export interface AuthenticatedRequest extends NextApiRequest {
+  user: {
+    role: string;
+    companyId: string;
+  };
+}
+
+const handler = async (req: AuthenticatedRequest, res: NextApiResponse) => {
   const { id } = req.query;
 
   switch (req.method) {
@@ -18,7 +24,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 };
 
 const getCompany = async (
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse,
   id: string
 ) => {
@@ -39,7 +45,7 @@ const getCompany = async (
 };
 
 const updateCompany = async (
-  req: NextApiRequest,
+  req: AuthenticatedRequest,
   res: NextApiResponse,
   id: string
 ) => {

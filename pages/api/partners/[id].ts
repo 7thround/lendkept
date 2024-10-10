@@ -31,6 +31,7 @@ const getPartner = async (
     return res.status(404).json({ message: "Partner not found" });
   }
 
+  // @ts-ignore
   if (req.user.role === "PARTNER" && req.user.companyId !== partner.companyId) {
     return res.status(403).json({ message: "Forbidden" });
   }

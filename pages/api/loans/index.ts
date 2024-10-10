@@ -25,6 +25,7 @@ async function getLoans(req: NextApiRequest, res: NextApiResponse) {
 async function createLoan(req: NextApiRequest, res: NextApiResponse) {
   const { address, details, phone, status, partnerId, companyId } = req.body;
   const newLoan = await prisma.loan.create({
+    // @ts-ignore
     data: { address, details, phone, status, partnerId, companyId },
   });
   res.status(201).json(newLoan);

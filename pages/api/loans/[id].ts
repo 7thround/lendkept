@@ -38,6 +38,7 @@ async function updateLoan(
   const { address, details, phone, status, partnerId, companyId } = req.body;
   const updatedLoan = await prisma.loan.update({
     where: { id },
+    // @ts-ignore
     data: { address, details, phone, status, partnerId, companyId },
   });
   res.status(200).json(updatedLoan);

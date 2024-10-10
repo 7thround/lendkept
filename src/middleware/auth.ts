@@ -12,6 +12,7 @@ export function authenticate(handler) {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // @ts-ignore
       req.user = decoded;
       return handler(req, res);
     } catch (error) {
@@ -23,6 +24,7 @@ export function authenticate(handler) {
 export function authorize(roles: string[]) {
   return (handler) => {
     return async (req: NextApiRequest, res: NextApiResponse) => {
+      // @ts-ignore
       if (!roles.includes(req.user.role)) {
         return res.status(403).json({ message: "Forbidden" });
       }
