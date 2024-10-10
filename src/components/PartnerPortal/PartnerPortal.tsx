@@ -123,7 +123,7 @@ const PartnerPortal = () => {
                         <td className="py-2 px-4 whitespace-nowrap">
                           <button
                             onClick={() => router.push(`/loans/${loan.id}`)}
-                            className="text-indigo-400 hover:text-indigo-900 mr-2"
+                            className="text-blue-600 hover:text-blue-900 mr-2"
                           >
                             <EyeIcon className="h-5 w-5" />
                           </button>
@@ -177,7 +177,7 @@ const PartnerPortal = () => {
                           {partner.phone}
                         </td>
                         <td className="py-2 px-4 whitespace-nowrap">
-                          <button className="text-indigo-400 hover:text-indigo-900">
+                          <button className="text-blue-600 hover:text-blue-900">
                             <EyeIcon className="h-5 w-5" />
                           </button>
                         </td>
@@ -267,7 +267,7 @@ const PartnerPortal = () => {
                     placeholder="Additional Information"
                   ></textarea>
                 </div>
-                <button className="bg-blue-500 text-white py-2 px-4 rounded-lg">
+                <button className="bg-blue-600 text-white py-2 px-4 rounded-lg">
                   Submit
                 </button>
               </form>
