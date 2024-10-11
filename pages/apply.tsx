@@ -53,7 +53,7 @@ const MortgageApplicationForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded my-8"
+      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded"
     >
       <h1 className="text-2xl font-bold mb-6 text-center">
         Mortgage Application
