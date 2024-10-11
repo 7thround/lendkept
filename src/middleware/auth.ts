@@ -1,10 +1,16 @@
 // src/middleware/auth.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import jwt from "jsonwebtoken";
+import cookie from "cookie";
 
 export function authenticate(handler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
-    const token = req.headers.authorization?.split(" ")[1];
+    const { token } = cookie.parse(req.headers.cookie || "");
+
+    if (!token) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
 
     if (!token) {
       return res.status(401).json({ message: "Unauthorized" });

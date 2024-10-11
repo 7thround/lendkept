@@ -13,7 +13,6 @@ datasource db {
 model Partner {
   id                  String   @default(cuid()) @id
   name                String
-  address             String
   email               String   @unique
   phone               String
   referralCode        String
@@ -25,6 +24,11 @@ model Partner {
   loans               Loan[]
   messages            Message[]
   user                User?
+  addressLine1        String
+  addressLine2        String?
+  city                String
+  state               String
+  zip                 String
 }
 
 model Company {
@@ -32,11 +36,15 @@ model Company {
   name         String
   logo         String?
   defaultBonus Int
-  address      String
   phone        String
   partners     Partner[]
   loans        Loan[]
   users        User[]
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  zip          String
 }
 
 model Message {
