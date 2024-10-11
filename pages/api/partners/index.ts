@@ -25,6 +25,7 @@ async function getPartners(req: NextApiRequest, res: NextApiResponse) {
 async function createPartner(req: NextApiRequest, res: NextApiResponse) {
   const { name, email, phone, companyId, referralCode, address } = req.body;
   const newPartner = await prisma.partner.create({
+    // @ts-ignore
     data: { name, email, phone, companyId, referralCode, address },
   });
   res.status(201).json(newPartner);

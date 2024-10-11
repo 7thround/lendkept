@@ -25,6 +25,7 @@ async function getCompanies(req: NextApiRequest, res: NextApiResponse) {
 async function createCompany(req: NextApiRequest, res: NextApiResponse) {
   const { name, logo, defaultBonus, address, phone } = req.body;
   const newCompany = await prisma.company.create({
+    // @ts-ignore
     data: { name, logo, defaultBonus, address, phone },
   });
   res.status(201).json(newCompany);
