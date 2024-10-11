@@ -23,10 +23,48 @@ async function getLoans(req: NextApiRequest, res: NextApiResponse) {
 }
 
 async function createLoan(req: NextApiRequest, res: NextApiResponse) {
-  const { address, details, phone, status, partnerId, companyId } = req.body;
-  const newLoan = await prisma.loan.create({
-    // @ts-ignore
-    data: { address, details, phone, status, partnerId, companyId },
-  });
-  res.status(201).json(newLoan);
+  if (req.method !== "POST") {
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
+  }
+
+  const {
+    clientName,
+    clientPhone,
+    clientEmail,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    zip,
+    loanType,
+    loanAmount,
+    status,
+    partnerId,
+    companyId,
+  } = req.body;
+
+  try {
+    const newLoan = await prisma.loan.create({
+      data: {
+        clientName,
+        clientPhone,
+        clientEmail,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        zip,
+        loanType,
+        loanAmount,
+        status,
+        partnerId,
+        companyId,
+      },
+    });
+
+    res.status(201).json(newLoan);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 }
