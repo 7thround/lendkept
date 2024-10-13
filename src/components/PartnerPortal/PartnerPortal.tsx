@@ -1,8 +1,19 @@
 import React, { useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
+import { Company, Partner } from "@prisma/client";
 
-const PartnerPortal = () => {
+const copyToClipboard = (text) => {
+  navigator.clipboard.writeText(text);
+};
+
+const PartnerPortal = ({
+  partner,
+  company,
+}: {
+  partner: Partner;
+  company: Company;
+}) => {
   const router = useRouter();
   const [loans, setLoans] = useState([
     {
@@ -11,13 +22,11 @@ const PartnerPortal = () => {
       status: "PROCESSING",
       partner: "John Doe",
     },
-    // Add more loans as needed
   ]);
 
   const [message, setMessage] = useState("");
   const [messageHistory, setMessageHistory] = useState([
     "Welcome to our loan service!",
-    // Add more messages as needed
   ]);
 
   const [partners, setPartners] = useState([
@@ -29,12 +38,11 @@ const PartnerPortal = () => {
     },
     // Add more partners as needed
   ]);
-
-  const [referralCode, setReferralCode] = useState("REF12345");
+  const referralLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/apply?referralCode=${partner.referralCode}`;
+  const [referralCode, setReferralCode] = useState(referralLink);
   const [referralBonuses, setReferralBonuses] = useState([
     { name: "John Doe", amount: 250 },
     { name: "Jane Smith", amount: 500 },
-    // Add more referral bonuses as needed
   ]);
 
   const handleStatusChange = (loanId, newStatus) => {
@@ -57,6 +65,24 @@ const PartnerPortal = () => {
   const handleSubmitReferral = (e) => {
     e.preventDefault();
     // Implement referral submission logic here
+  };
+
+  const [copyText, setCopyText] = useState("Share Application Link");
+  const handleCopyLink = () => {
+    copyToClipboard(referralCode);
+    setCopyText("Copied!");
+    setTimeout(() => setCopyText("Share Application Link"), 2000);
+  };
+
+  const [copyPartnerText, setCopyPartnerText] = useState(
+    "Partner Referral Link"
+  );
+  const handleCopyPartnerLink = () => {
+    copyToClipboard(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register?referralCode=${partner.referralCode}`
+    );
+    setCopyPartnerText("Copied!");
+    setTimeout(() => setCopyPartnerText("Partner Referral Link"), 2000);
   };
 
   return (
@@ -137,9 +163,17 @@ const PartnerPortal = () => {
 
             {/* Referred Partners Panel */}
             <div className="bg-white shadow rounded-lg py-4 flex flex-col flex-grow">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 px-4">
-                Partner Referrals
-              </h2>
+              <div className="flex align-center justify-between mb-4 px-4">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Partner Referrals
+                </h2>
+                <button
+                  onClick={handleCopyPartnerLink}
+                  className="bg-yellow-500 text-white px-2 rounded-lg text-sm"
+                >
+                  {copyPartnerText}
+                </button>
+              </div>
               <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
                 <table className="min-w-full bg-white">
                   <thead>
@@ -203,11 +237,14 @@ const PartnerPortal = () => {
                 <input
                   type="text"
                   className="w-full border border-gray-300 rounded-lg p-2"
-                  value={referralCode}
+                  value={partner.referralCode}
                   readOnly
                 />
-                <button className="mt-2 bg-yellow-500 text-white py-1 px-2 rounded-lg">
-                  Copy Link
+                <button
+                  onClick={handleCopyLink}
+                  className="mt-2 bg-yellow-500 text-white py-1 px-2 rounded-lg"
+                >
+                  {copyText}
                 </button>
               </div>
             </div>

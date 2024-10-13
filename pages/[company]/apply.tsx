@@ -3,9 +3,9 @@ import prisma from "../../lib/prisma";
 import { Company, Partner } from "@prisma/client";
 
 export const getServerSideProps = async (context) => {
-  const currentPath = context.resolvedUrl;
-  const companySlug = currentPath.split("/")[1];
-  const referralCode = context.query.ref || ("" as string);
+  const { params } = context;
+  const { company: companySlug } = params;
+  const referralCode = context.query.referralCode || ("" as string);
   try {
     const company = await prisma.company.findUnique({
       where: { slug: companySlug },
@@ -47,7 +47,7 @@ interface Props {
 const MortgageApplicationForm = ({ company, partner }: Props) => {
   const { primaryColor } = company;
   const [formData, setFormData] = useState({
-    loanType: "",
+    loanType: "buy",
     downPayment: "",
     foundHome: "",
     clientName: "",
@@ -99,11 +99,10 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ borderTopColor: primaryColor }}
-      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-12"
+      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-4"
+      style={{ borderColor: company.primaryColor }}
     >
-      <h1 className="text-2xl font-bold mb-6 text-center">Loan Application</h1>
-
+      <h1 className="text-2xl font-bold mb-4 text-center">Loan Application</h1>
       {/* Company Info Section */}
       <div className="mb-6">
         <p className="text-sm text-gray-600 text-center">
@@ -168,6 +167,17 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <button
             type="button"
+            onClick={() => setFormData({ ...formData, loanType: "buy" })}
+            style={{
+              backgroundColor: formData.loanType === "buy" ? primaryColor : "",
+              color: formData.loanType === "buy" ? "white" : "",
+            }}
+            className="p-2 border rounded"
+          >
+            New Purchase
+          </button>
+          <button
+            type="button"
             onClick={() => setFormData({ ...formData, loanType: "refinance" })}
             style={{
               backgroundColor:
@@ -178,17 +188,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
           >
             Refinance
           </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, loanType: "buy" })}
-            style={{
-              backgroundColor: formData.loanType === "buy" ? primaryColor : "",
-              color: formData.loanType === "buy" ? "white" : "",
-            }}
-            className="p-2 border rounded"
-          >
-            New home
-          </button>
+
           <button
             type="button"
             onClick={() => setFormData({ ...formData, loanType: "equity" })}

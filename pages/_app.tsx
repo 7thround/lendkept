@@ -2,7 +2,8 @@ import Layout from "../src/components/Layout";
 import "../src/styles/globals.css";
 
 function App({ Component, pageProps, router }) {
-  const isApplicationPage = router.route.includes("/apply");
+  const isApplicationPage =
+    router.route.includes("/apply") || router.route.includes("/register");
   const { company } = pageProps;
   if (isApplicationPage && company) {
     const header = (
