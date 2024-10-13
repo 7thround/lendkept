@@ -62,7 +62,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             name,
             phone,
             logo,
-            defaultBonus,
             addressLine1,
             addressLine2,
             city,
