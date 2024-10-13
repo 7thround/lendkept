@@ -123,7 +123,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-4">Applicant Info</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="col-span-2">
+          <div className="md:col-span-2">
             <input
               placeholder="Full Name"
               type="text"

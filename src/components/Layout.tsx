@@ -16,7 +16,7 @@ const Header = () => (
 );
 
 const Footer = () => (
-  <footer className="bg-gray-500 text-white p-4 text-center">
+  <footer className="bg-gray-700 text-white p-4 text-center">
     <p className="text-sm text-center">Powered by LendKEPT &copy; 2024</p>
   </footer>
 );
@@ -24,9 +24,11 @@ const Footer = () => (
 const Layout = ({
   children,
   header,
+  showLogout = true,
 }: {
   children: React.ReactNode;
   header?: React.ReactNode;
+  showLogout?: boolean;
 }) => (
   <div className="flex flex-col min-h-screen">
     {header || <Header />}

@@ -74,15 +74,13 @@ const PartnerPortal = ({
     setTimeout(() => setCopyText("Share Application Link"), 2000);
   };
 
-  const [copyPartnerText, setCopyPartnerText] = useState(
-    "Partner Referral Link"
-  );
+  const [copyPartnerText, setCopyPartnerText] = useState("Copy Link");
   const handleCopyPartnerLink = () => {
     copyToClipboard(
       `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register?referralCode=${partner.referralCode}`
     );
     setCopyPartnerText("Copied!");
-    setTimeout(() => setCopyPartnerText("Partner Referral Link"), 2000);
+    setTimeout(() => setCopyPartnerText("Copy Link"), 2000);
   };
 
   return (
@@ -227,7 +225,7 @@ const PartnerPortal = ({
           <div className="flex flex-col space-y-4 w-full lg:w-1/3">
             {/* Referral Program Panel */}
             <div className="bg-white shadow rounded-lg p-4">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Referral Program
               </h3>
               <div>
@@ -250,7 +248,7 @@ const PartnerPortal = ({
             </div>
             {/* Referral Bonuses Panel */}
             <div className="bg-white shadow rounded-lg p-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
                 Referral Bonuses
               </h2>
               <ul className="divide-y divide-gray-200">
@@ -264,50 +262,6 @@ const PartnerPortal = ({
                   </li>
                 ))}
               </ul>
-            </div>
-            {/* Submit Loan Referral Panel */}
-            <div className="bg-white shadow rounded-lg p-4">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Submit a Loan
-              </h2>
-              <form onSubmit={handleSubmitReferral}>
-                <div className="mb-4">
-                  <label className="block text-gray-700">Applicant Name</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700">Phone Number</label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="555-555-5555"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block text-gray-700">
-                    Property Address
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="123 Main St, City, State"
-                  />
-                </div>
-                <div className="mb-4">
-                  {/* <label className="block text-gray-700">Loan details</label> */}
-                  <textarea
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                    placeholder="Additional Information"
-                  ></textarea>
-                </div>
-                <button className="bg-blue-600 text-white py-2 px-4 rounded-lg">
-                  Submit
-                </button>
-              </form>
             </div>
           </div>
         </div>
