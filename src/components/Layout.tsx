@@ -1,6 +1,6 @@
 // components/Layout.js
 import React from "react";
-import LogoutButton from "../LogoutButton";
+import LogoutButton from "./LogoutButton";
 
 const Header = () => (
   <header className="bg-blue-600 text-white p-0">
@@ -17,16 +17,20 @@ const Header = () => (
 
 const Footer = () => (
   <footer className="bg-gray-500 text-white p-4 text-center">
-    <p className="text-sm text-center">
-      &copy; 2024 LendKEPT App. All rights reserved.
-    </p>
+    <p className="text-sm text-center">Powered by LendKEPT &copy; 2024</p>
   </footer>
 );
 
-const Layout = ({ children }) => (
+const Layout = ({
+  children,
+  header,
+}: {
+  children: React.ReactNode;
+  header?: React.ReactNode;
+}) => (
   <div className="flex flex-col min-h-screen">
-    <Header />
-    <main className="flex-grow bg-gray-100 p-0">{children}</main>
+    {header || <Header />}
+    <main className="flex-grow bg-gray-100 p-6">{children}</main>
     <Footer />
   </div>
 );

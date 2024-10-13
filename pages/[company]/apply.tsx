@@ -1,8 +1,54 @@
 import { useState } from "react";
+import prisma from "../../lib/prisma";
+import { Company, Partner } from "@prisma/client";
 
-const MortgageApplicationForm = () => {
+export const getServerSideProps = async (context) => {
+  const currentPath = context.resolvedUrl;
+  const companySlug = currentPath.split("/")[1];
+  const referralCode = context.query.ref || ("" as string);
+  try {
+    const company = await prisma.company.findUnique({
+      where: { slug: companySlug },
+    });
+
+    if (!company) {
+      return {
+        notFound: true,
+      };
+    }
+
+    const partner: Partner = await prisma.partner.findFirst({
+      where: {
+        referralCode,
+        companyId: company.id,
+      },
+    });
+
+    return {
+      props: { company, partner },
+    };
+  } catch (error) {
+    console.error("Error verifying the user:", error);
+
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+};
+
+interface Props {
+  company: Company;
+  partner: Partner;
+}
+
+const MortgageApplicationForm = ({ company, partner }: Props) => {
+  const { primaryColor } = company;
   const [formData, setFormData] = useState({
-    loanPurpose: "",
+    loanType: "",
+    downPayment: "",
     foundHome: "",
     clientName: "",
     clientPhone: "",
@@ -12,10 +58,10 @@ const MortgageApplicationForm = () => {
     city: "",
     state: "",
     zip: "",
-    loanAmount: 0,
+    loanAmount: "",
     creditConsent: false,
-    annualIncome: 0,
-    monthlyDebt: 0,
+    annualIncome: "",
+    monthlyDebt: "",
     dob: "",
     ssn: "",
   });
@@ -53,87 +99,34 @@ const MortgageApplicationForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded"
+      style={{ borderTopColor: primaryColor }}
+      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-12"
     >
-      <h1 className="text-2xl font-bold mb-6 text-center">
-        Mortgage Application
-      </h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">Loan Application</h1>
 
-      {/* Loan Purpose Section */}
+      {/* Company Info Section */}
       <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-4">Loan Purpose</h2>
-        <div className="grid grid-cols-3 gap-4">
-          <button
-            type="button"
-            onClick={() =>
-              setFormData({ ...formData, loanPurpose: "refinance" })
-            }
-            className={`p-2 border rounded ${
-              formData.loanPurpose === "refinance"
-                ? "bg-blue-500 text-white"
-                : ""
-            }`}
+        <p className="text-sm text-gray-600 text-center">
+          You are applying for a mortgage with{" "}
+          <a
+            href={company.url}
+            style={{ color: primaryColor }}
+            className="font-bold"
           >
-            Refinance
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, loanPurpose: "buy" })}
-            className={`p-2 border rounded ${
-              formData.loanPurpose === "buy" ? "bg-blue-500 text-white" : ""
-            }`}
-          >
-            New home
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, loanPurpose: "equity" })}
-            className={`p-2 border rounded ${
-              formData.loanPurpose === "equity" ? "bg-blue-500 text-white" : ""
-            }`}
-          >
-            Equity
-          </button>
-        </div>
+            {company.name}
+          </a>
+          .
+        </p>
       </div>
-
-      {/* Home Info Section */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-4">Home Info</h2>
-        <label className="block mb-2">
-          Have you found the home you'd like to buy?
-        </label>
-        <div className="flex items-center mb-4">
-          <input
-            type="radio"
-            name="foundHome"
-            value="yes"
-            onChange={handleChange}
-            className="mr-2"
-          />
-          <label>Yes</label>
-        </div>
-        <div className="flex items-center">
-          <input
-            type="radio"
-            name="foundHome"
-            value="no"
-            onChange={handleChange}
-            className="mr-2"
-          />
-          <label>No</label>
-        </div>
-      </div>
+      <div className="border-t border-gray-300 my-6"></div>
 
       {/* Personal Info Section */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Personal Info</h2>
+        <h2 className="text-lg font-semibold mb-4">Applicant Info</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Full Name
-            </label>
             <input
+              placeholder="Full Name"
               type="text"
               name="clientName"
               value={formData.clientName}
@@ -144,11 +137,9 @@ const MortgageApplicationForm = () => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Phone Number
-            </label>
             <input
-              type="text"
+              placeholder="Phone Number"
+              type="tel"
               name="clientPhone"
               value={formData.clientPhone}
               onChange={handleChange}
@@ -158,10 +149,8 @@ const MortgageApplicationForm = () => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Email Address
-            </label>
             <input
+              placeholder="Email Address"
               type="email"
               name="clientEmail"
               value={formData.clientEmail}
@@ -173,15 +162,55 @@ const MortgageApplicationForm = () => {
         </div>
       </div>
 
+      {/* Loan Details Section */}
+      <div className="my-6">
+        <h2 className="text-lg font-semibold mb-4">Loan Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, loanType: "refinance" })}
+            style={{
+              backgroundColor:
+                formData.loanType === "refinance" ? primaryColor : "",
+              color: formData.loanType === "refinance" ? "white" : "",
+            }}
+            className="p-2 border rounded"
+          >
+            Refinance
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, loanType: "buy" })}
+            style={{
+              backgroundColor: formData.loanType === "buy" ? primaryColor : "",
+              color: formData.loanType === "buy" ? "white" : "",
+            }}
+            className="p-2 border rounded"
+          >
+            New home
+          </button>
+          <button
+            type="button"
+            onClick={() => setFormData({ ...formData, loanType: "equity" })}
+            style={{
+              backgroundColor:
+                formData.loanType === "equity" ? primaryColor : "",
+              color: formData.loanType === "equity" ? "white" : "",
+            }}
+            className="p-2 border rounded"
+          >
+            Equity
+          </button>
+        </div>
+      </div>
+
       {/* Address Section */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Address</h2>
+        <h2 className="text-lg font-semibold mb-4">Property Address</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Address Line 1
-            </label>
             <input
+              placeholder="Address Line 1"
               type="text"
               name="addressLine1"
               value={formData.addressLine1}
@@ -192,10 +221,8 @@ const MortgageApplicationForm = () => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Address Line 2
-            </label>
             <input
+              placeholder="Address Line 2"
               type="text"
               name="addressLine2"
               value={formData.addressLine2}
@@ -205,10 +232,8 @@ const MortgageApplicationForm = () => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              City
-            </label>
             <input
+              placeholder="City"
               type="text"
               name="city"
               value={formData.city}
@@ -219,10 +244,8 @@ const MortgageApplicationForm = () => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              State
-            </label>
             <input
+              placeholder="State"
               type="text"
               name="state"
               value={formData.state}
@@ -233,10 +256,8 @@ const MortgageApplicationForm = () => {
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              ZIP Code
-            </label>
             <input
+              placeholder="ZIP Code"
               type="text"
               name="zip"
               value={formData.zip}
@@ -251,32 +272,57 @@ const MortgageApplicationForm = () => {
       {/* Finances Section */}
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-4">Finances</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="col-span-1">
+            <input
+              type="number"
+              name="loanAmount"
+              value={formData.loanAmount}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full p-2 border border-gray-300 rounded"
+              autoComplete="off"
+              placeholder="Loan Amount"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <input
+              type="number"
+              name="downPayment"
+              value={formData.downPayment}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full p-2 border border-gray-300 rounded"
+              autoComplete="off"
+              placeholder="Down Payment"
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Annual Income
-            </label>
             <input
+              placeholder="Annual Income"
               type="number"
               name="annualIncome"
               value={formData.annualIncome}
               onChange={handleChange}
               required
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
+              autoComplete="off"
             />
           </div>
 
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Monthly Debt
-            </label>
             <input
+              placeholder="Monthly Debt"
               type="number"
               name="monthlyDebt"
               value={formData.monthlyDebt}
               onChange={handleChange}
               required
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
+              autoComplete="off"
             />
           </div>
         </div>
@@ -287,27 +333,22 @@ const MortgageApplicationForm = () => {
         <h2 className="text-lg font-semibold mb-4">Credit Info</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Date of Birth
-            </label>
             <input
-              type="date"
-              name="dob"
-              value={formData.dob}
+              placeholder="SSN"
+              type="password"
+              name="ssn"
+              value={formData.ssn}
               onChange={handleChange}
               required
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
             />
           </div>
-
           <div className="col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Social Security Number
-            </label>
             <input
-              type="password"
-              name="ssn"
-              value={formData.ssn}
+              placeholder="Date of Birth"
+              type="date"
+              name="dob"
+              value={formData.dob}
               onChange={handleChange}
               required
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -339,7 +380,11 @@ const MortgageApplicationForm = () => {
             applicable data protection laws. Your SSN will be encrypted and
             stored securely, and access will be limited to authorized personnel
             only. For more information, please refer to our
-            <a href="#" className="text-blue-500 underline">
+            <a
+              href="#"
+              style={{ color: primaryColor }}
+              className="underline ml-1"
+            >
               Privacy Policy
             </a>
             .
@@ -351,11 +396,22 @@ const MortgageApplicationForm = () => {
       <div className="mt-6 text-center">
         <button
           type="submit"
-          className="px-6 py-2 bg-blue-500 text-white rounded"
+          style={{ backgroundColor: primaryColor }}
+          className="px-6 py-2 text-white rounded w-full md:w-auto"
         >
           Submit Application
         </button>
       </div>
+
+      {/* Referral Code Section */}
+      {partner && (
+        <div className="text-center text-gray-600 mt-6">
+          Referred By:{" "}
+          <span style={{ color: primaryColor }} className="font-bold">
+            {partner.name}
+          </span>
+        </div>
+      )}
     </form>
   );
 };

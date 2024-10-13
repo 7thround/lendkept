@@ -15,7 +15,7 @@ model Partner {
   name                String
   email               String   @unique
   phone               String
-  referralCode        String
+  referralCode        String   @unique
   referringPartner    Partner? @relation("Referrals", fields: [referringPartnerId], references: [id])
   referringPartnerId  String? 
   referredPartners    Partner[] @relation("Referrals")
@@ -35,7 +35,6 @@ model Company {
   id           String   @default(cuid()) @id
   name         String
   logo         String?
-  defaultBonus Int
   phone        String
   partners     Partner[]
   loans        Loan[]
@@ -45,6 +44,9 @@ model Company {
   city         String
   state        String
   zip          String
+  slug         String   @unique @default(cuid())
+  url          String?
+  primaryColor String?
 }
 
 model Message {
