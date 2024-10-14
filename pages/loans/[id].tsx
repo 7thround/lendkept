@@ -1,5 +1,6 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
+import { Column, PageContainer } from "../../src/components/Layout/PageParts";
 
 const defaultLoan = {
   id: "1",
@@ -118,7 +119,7 @@ const LoanTimeline = ({ currentStatus }) => {
   const activeStatusColor = (status: string) =>
     status === "Loan Funded" ? "bg-green-600 " : "bg-blue-600";
   return (
-    <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border">
+    <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border overflow-x-auto">
       {statuses.map((status, index) => (
         <div key={index} className="flex flex-col items-center min-w-max">
           <div
@@ -161,7 +162,7 @@ const NotesSection = () => {
   };
 
   return (
-    <div className="bg-white shadow rounded-lg p-4 mt-4">
+    <div className="bg-white shadow rounded-lg p-4">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Notes</h2>
       <ul className="space-y-4">
         {notes.map((note, index) => (
@@ -284,12 +285,13 @@ const LoanPage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-100 p-4 flex flex-col flex-grow">
-        <div className="flex gap-4">
+      <PageContainer>
+        <Column col={8}>
           <div className="bg-white shadow rounded-lg p-4 flex-grow">
             <h1 className="text-xl font-semibold text-gray-900 mb-4">
               Loan Details
             </h1>
+            <div className="text-center font-semibold pb-2">Loan Timeline</div>
             <LoanTimeline currentStatus={loan.status} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">
@@ -374,42 +376,44 @@ const LoanPage = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-col lg:w-1/3">
-            {/* Status Panel */}
-            <UpdateStatusPanel
-              currentStatus={loan.status}
-              updateStatus={updateStatus}
-            />
-            {/* Activity Log */}
-            <div className="bg-white shadow rounded-lg p-4 mt-4 h-full">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2 pb-2">
-                  Activity Log
-                </h2>
-                <ul className="space-y-2">
-                  {activities.map((activity, index) => (
-                    <>
-                      <li
-                        key={activity.id}
-                        className="flex justify-between items-start"
-                      >
-                        <span className="flex-1">{activity.description}</span>
-                        <span className="text-gray-500 whitespace-nowrap ml-4">
-                          {formatDateWithTime(activity.date)}
-                        </span>
-                      </li>
-                      {index !== activities.length - 1 && (
-                        <hr className="border-gray-200 my-2" />
-                      )}
-                    </>
-                  ))}
-                </ul>
-              </div>
+        </Column>
+        <Column col={4}>
+          {/* Status Panel */}
+          <UpdateStatusPanel
+            currentStatus={loan.status}
+            updateStatus={updateStatus}
+          />
+          {/* Activity Log */}
+          <div className="bg-white shadow rounded-lg p-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2 pb-2">
+                Activity Log
+              </h2>
+              <ul className="space-y-2">
+                {activities.map((activity, index) => (
+                  <>
+                    <li
+                      key={activity.id}
+                      className="flex justify-between items-start"
+                    >
+                      <span className="flex-1">{activity.description}</span>
+                      <span className="text-gray-500 whitespace-nowrap ml-4">
+                        {formatDateWithTime(activity.date)}
+                      </span>
+                    </li>
+                    {index !== activities.length - 1 && (
+                      <hr className="border-gray-200 my-2" />
+                    )}
+                  </>
+                ))}
+              </ul>
             </div>
           </div>
-        </div>
-        <NotesSection />
-      </div>
+        </Column>
+        <Column col={12}>
+          <NotesSection />
+        </Column>
+      </PageContainer>
       {/* Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">

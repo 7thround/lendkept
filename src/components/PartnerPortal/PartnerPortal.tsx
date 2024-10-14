@@ -23,8 +23,6 @@ const PartnerPortal = ({
   partners: Partner[];
   referredLoans: Loan[];
 }) => {
-  console.log("loans", loans);
-  console.log("referredLoans", referredLoans);
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [messageHistory, setMessageHistory] = useState([
@@ -42,12 +40,24 @@ const PartnerPortal = ({
   ]);
 
   const [copyText, setCopyText] = useState<String | JSX.Element>(
-    "Loan Application Link"
+    <>
+      Loan Application Link
+      <LinkIcon className="h-5 w-5 text-white" />
+    </>
   );
   const handleCopyLink = () => {
     copyToClipboard(referralLink);
-    setCopyText("Copied!");
-    setTimeout(() => setCopyText("Loan Application Link"), 2000);
+    setCopyText("LinkCopied!");
+    setTimeout(
+      () =>
+        setCopyText(
+          <>
+            Loan Application Link
+            <LinkIcon className="h-5 w-5 text-white" />
+          </>
+        ),
+      300
+    );
   };
 
   const [copyPartnerText, setCopyPartnerText] = useState<String | JSX.Element>(
@@ -57,10 +67,10 @@ const PartnerPortal = ({
     copyToClipboard(
       `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register?referralCode=${partner.referralCode}`
     );
-    setCopyPartnerText("Copied!");
+    setCopyPartnerText("LinkCopied!");
     setTimeout(
       () => setCopyPartnerText(<LinkIcon className="h-5 w-5 text-white" />),
-      2000
+      300
     );
   };
 
@@ -77,7 +87,7 @@ const PartnerPortal = ({
               <thead>
                 <tr>
                   <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Address
+                    Property Address
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
@@ -87,9 +97,6 @@ const PartnerPortal = ({
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     View
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Referred By
                   </th>
                 </tr>
               </thead>
@@ -124,6 +131,69 @@ const PartnerPortal = ({
                           <EyeIcon className="h-5 w-5 text-gray-500" />
                         </button>
                       </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      className="py-2 px-4 whitespace-nowrap text-center"
+                      colSpan={4}
+                    >
+                      <div>No loans yet</div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {/* Partner Loans Panel */}
+        <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2 px-4">
+            Partner Loans
+          </h2>
+          <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr>
+                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Property Address
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Referred By
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {referredLoans ? (
+                  referredLoans.map((loan) => (
+                    <tr key={loan.id}>
+                      <td className="py-2 px-4 whitespace-nowrap">
+                        {loan.addressLine1}
+                      </td>
+                      <td className="py-2 px-4 whitespace-nowrap">
+                        ${loan.loanAmount.toLocaleString()}
+                      </td>
+                      <td className="py-2 px-4 whitespace-nowrap">
+                        <select
+                          disabled
+                          className=" rounded-lg p-2 brightness-95"
+                          value={loan.status}
+                        >
+                          <option value="SUBMITTED" disabled>
+                            Submitted
+                          </option>
+                          <option value="PROCESSING">Processing</option>
+                          <option value="FUNDED">Funded</option>
+                          <option value="CANCELLED">Cancelled</option>
+                        </select>
+                      </td>
                       <td className="py-2 px-4 whitespace-nowrap text-center">
                         {/* @ts-ignore */}
                         {loan.partner ? loan.partner.name : "-"}
@@ -144,11 +214,46 @@ const PartnerPortal = ({
             </table>
           </div>
         </div>
-        {/* Referred Partners Panel */}
+      </Column>
+      <Column col={4}>
+        {/* Refer a Partner Panel */}
+        <div className="bg-white shadow rounded-lg p-4">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            Affiliate Referrals
+          </h3>
+          <div>
+            <div className="block text-gray-700 pb-2">
+              Share your referral link with others to earn commissions.
+            </div>
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-lg p-2"
+                value={partner.referralCode}
+                readOnly
+              />
+              <button
+                onClick={handleCopyPartnerLink}
+                className="bg-yellow-500 text-white p-2 rounded-lg shrink-0"
+              >
+                {copyPartnerText}
+              </button>
+            </div>
+            <div className="">
+              <button
+                onClick={handleCopyLink}
+                className="bg-yellow-500 text-white px-2 py-1 rounded-lg shrink-0 flex gap-2 items-center mt-4"
+              >
+                {copyText}
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* Affiliate Partners Panel */}
         <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4">
             <h2 className="text-xl font-semibold text-gray-900">
-              Partner Referrals
+              Affiliate Partners
             </h2>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
@@ -189,45 +294,10 @@ const PartnerPortal = ({
             </table>
           </div>
         </div>
-      </Column>
-      <Column col={4}>
-        {/* Referral Program Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Referral Program
-          </h3>
-          <div>
-            <label className="block text-gray-700 pb-2">
-              Refer a partner and earn bonuses!
-            </label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg p-2"
-                value={partner.referralCode}
-                readOnly
-              />
-              <button
-                onClick={handleCopyPartnerLink}
-                className="bg-yellow-500 text-white p-2 rounded-lg shrink-0"
-              >
-                {copyPartnerText}
-              </button>
-            </div>
-            <div className="flex gap-2 items-center mt-4">
-              <button
-                onClick={handleCopyLink}
-                className="text-sm shrink-0 font-bold"
-              >
-                {copyText}
-              </button>
-            </div>
-          </div>
-        </div>
-        {/* Referral Bonuses Panel */}
+        {/* Affiliate Commissions Panel */}
         <div className="bg-white shadow rounded-lg p-4">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Referral Bonuses
+            Affiliate Commissions
           </h2>
           <ul className="divide-y divide-gray-200">
             {referralLoans.map((bonus, index) => (

@@ -106,7 +106,7 @@ export const getServerSideProps: GetServerSideProps = async (
           role,
           partner: partnerData,
           company,
-          loans: [...partnerLoans, ...referredLoans],
+          loans: [...partnerLoans],
           partners: referredPartners,
           referredLoans,
         },
