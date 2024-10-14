@@ -41,7 +41,7 @@ const PartnerPortal = ({
   );
   const handleCopyLink = () => {
     copyToClipboard(referralLink);
-    setCopyText("Link Copied!");
+    setCopyText("Copied!");
     setTimeout(
       () => setCopyText(<LinkIcon className="h-5 w-5 text-white" />),
       2000
@@ -55,7 +55,7 @@ const PartnerPortal = ({
     copyToClipboard(
       `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register?referralCode=${partner.referralCode}`
     );
-    setCopyPartnerText("Link Copied!");
+    setCopyPartnerText("Copied!");
     setTimeout(
       () => setCopyPartnerText(<LinkIcon className="h-5 w-5 text-white" />),
       2000
@@ -68,7 +68,7 @@ const PartnerPortal = ({
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
           <h2 className="text-xl font-semibold text-gray-900 mb-2 px-4">
-            My Loans
+            Welcome, {partner.name}!
           </h2>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">
@@ -148,12 +148,6 @@ const PartnerPortal = ({
             <h2 className="text-xl font-semibold text-gray-900">
               Partner Referrals
             </h2>
-            <button
-              onClick={handleCopyPartnerLink}
-              className="bg-yellow-500 text-white p-2 rounded-lg text-sm shrink-0"
-            >
-              {copyPartnerText}
-            </button>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">
@@ -212,8 +206,18 @@ const PartnerPortal = ({
                 readOnly
               />
               <button
-                onClick={handleCopyLink}
+                onClick={handleCopyPartnerLink}
                 className="bg-yellow-500 text-white p-2 rounded-lg shrink-0"
+              >
+                {copyPartnerText}
+              </button>
+            </div>
+            <div className="mt-4 font-bold">Loan Application Link</div>
+            <div className="flex gap-2 items-center">
+              <div>{referralLink}</div>
+              <button
+                onClick={handleCopyLink}
+                className="bg-yellow-500 text-white p-2 rounded-lg text-sm shrink-0"
               >
                 {copyText}
               </button>
