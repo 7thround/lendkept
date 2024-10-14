@@ -19,14 +19,17 @@ const defaultLoan = {
   companyId: "company456",
 };
 
-const formatDate = (dateString: string): string => {
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "long",
+const formatDateWithTime = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
+    month: "numeric",
     day: "numeric",
-  };
-  return new Date(dateString).toLocaleDateString(undefined, options);
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+  });
 };
+
 const statuses = [
   "Possible Loan",
   "Application Submitted",
@@ -172,7 +175,7 @@ const NotesSection = () => {
             <p className="text-gray-800 font-semibold">{note.author}</p>
             <p className="text-gray-600">{note.text}</p>
             <p className="text-gray-500 text-sm">
-              {formatDate(note.timestamp)}
+              {formatDateWithTime(note.timestamp)}
             </p>
           </li>
         ))}
@@ -392,7 +395,7 @@ const LoanPage = () => {
                       >
                         <span className="flex-1">{activity.description}</span>
                         <span className="text-gray-500 whitespace-nowrap ml-4">
-                          {formatDate(activity.date)}
+                          {formatDateWithTime(activity.date)}
                         </span>
                       </li>
                       {index !== activities.length - 1 && (

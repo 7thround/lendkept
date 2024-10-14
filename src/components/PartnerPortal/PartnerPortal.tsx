@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { EyeIcon, LinkIcon, TrashIcon } from "@heroicons/react/20/solid";
+import {
+  ClipboardIcon,
+  EyeIcon,
+  LinkIcon,
+  TrashIcon,
+} from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Company, Loan, Partner } from "@prisma/client";
 import { PageContainer, Column } from "../Layout/PageParts";
@@ -37,15 +42,12 @@ const PartnerPortal = ({
   ]);
 
   const [copyText, setCopyText] = useState<String | JSX.Element>(
-    <LinkIcon className="h-5 w-5 text-white" />
+    "Loan Application Link"
   );
   const handleCopyLink = () => {
     copyToClipboard(referralLink);
     setCopyText("Copied!");
-    setTimeout(
-      () => setCopyText(<LinkIcon className="h-5 w-5 text-white" />),
-      2000
-    );
+    setTimeout(() => setCopyText("Loan Application Link"), 2000);
   };
 
   const [copyPartnerText, setCopyPartnerText] = useState<String | JSX.Element>(
@@ -212,12 +214,10 @@ const PartnerPortal = ({
                 {copyPartnerText}
               </button>
             </div>
-            <div className="mt-4 font-bold">Loan Application Link</div>
-            <div className="flex gap-2 items-center">
-              <div>{referralLink}</div>
+            <div className="flex gap-2 items-center mt-4">
               <button
                 onClick={handleCopyLink}
-                className="bg-yellow-500 text-white p-2 rounded-lg text-sm shrink-0"
+                className="text-sm shrink-0 font-bold"
               >
                 {copyText}
               </button>
