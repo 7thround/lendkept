@@ -13,7 +13,7 @@ const defaultLoan = {
   zip: "10001",
   loanType: "Home",
   loanAmount: 250000.0,
-  status: "Loan Processing",
+  status: "Possible Loan",
   paid: false,
   partnerId: "partner123",
   companyId: "company456",
@@ -28,6 +28,7 @@ const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 const statuses = [
+  "Possible Loan",
   "Application Submitted",
   "Credit and Documents",
   "Loan Processing",
@@ -142,20 +143,7 @@ const LoanTimeline = ({ currentStatus }) => {
 };
 
 const NotesSection = () => {
-  const [notes, setNotes] = useState([
-    {
-      id: 1,
-      author: "Alice",
-      text: "Reviewed loan documents.",
-      timestamp: "2024-10-01 10:00 AM",
-    },
-    {
-      id: 2,
-      author: "Bob",
-      text: "Followed up with the client.",
-      timestamp: "2024-10-02 2:30 PM",
-    },
-  ]);
+  const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState("");
 
   const handleAddNote = () => {
