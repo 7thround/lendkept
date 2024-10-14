@@ -98,9 +98,10 @@ model Loan {
 }
 
 enum LoanType {
-  SBA
+  EQUITY
   HOME_PURCHASE
   REFINANCE
+  GENERAL_PURPOSE
 }
 
 enum LoanStatus {

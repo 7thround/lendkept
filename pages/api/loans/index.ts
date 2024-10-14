@@ -41,6 +41,7 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
     status,
     partnerId,
     companyId,
+    paid = false, // Default value
   } = req.body;
 
   try {
@@ -50,13 +51,14 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
         clientPhone,
         clientEmail,
         addressLine1,
-        addressLine2,
+        addressLine2: addressLine2 || null,
         city,
         state,
         zip,
         loanType,
-        loanAmount,
+        loanAmount: parseFloat(loanAmount),
         status,
+        paid,
         partnerId,
         companyId,
       },

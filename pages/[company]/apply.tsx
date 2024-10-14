@@ -1,6 +1,26 @@
 import { useState } from "react";
 import prisma from "../../lib/prisma";
 import { Company, Partner } from "@prisma/client";
+import InputMask from "react-input-mask";
+
+function formatLoanPayload(payload) {
+  return {
+    clientName: payload.clientName,
+    clientPhone: payload.clientPhone,
+    clientEmail: payload.clientEmail,
+    addressLine1: payload.addressLine1,
+    addressLine2: payload.addressLine2 || null,
+    city: payload.city,
+    state: payload.state,
+    zip: payload.zip,
+    loanType: payload.loanType,
+    loanAmount: parseFloat(payload.loanAmount),
+    status: "APPLICATION",
+    paid: false,
+    partnerId: "partner_id_placeholder",
+    companyId: "company_id_placeholder",
+  };
+}
 
 export const getServerSideProps = async (context) => {
   const { params } = context;
@@ -47,7 +67,7 @@ interface Props {
 const MortgageApplicationForm = ({ company, partner }: Props) => {
   const { primaryColor } = company;
   const [formData, setFormData] = useState({
-    loanType: "buy",
+    loanType: "HOME_PURCHASE",
     downPayment: "",
     foundHome: "",
     clientName: "",
@@ -65,6 +85,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
     dob: "",
     ssn: "",
   });
+  console.log("formData:", formData);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -81,16 +102,46 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
       return;
     }
 
-    const response = await fetch("/api/mortgage/apply", {
+    console.log("Submitting form data:", formData);
+
+    // Format the payload
+    const loanPayload = formatLoanPayload(formData);
+
+    // Add partner and company IDs to the payload
+    loanPayload.partnerId = partner.id;
+    loanPayload.companyId = company.id;
+
+    console.log("Submitted payload:", loanPayload);
+
+    const response = await fetch("/api/loans", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(loanPayload),
     });
 
     if (response.ok) {
       alert("Mortgage application submitted successfully!");
+      setFormData({
+        loanType: "HOME_PURCHASE",
+        downPayment: "",
+        foundHome: "",
+        clientName: "",
+        clientPhone: "",
+        clientEmail: "",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        state: "",
+        zip: "",
+        loanAmount: "",
+        creditConsent: false,
+        annualIncome: "",
+        monthlyDebt: "",
+        dob: "",
+        ssn: "",
+      });
     } else {
       alert("Failed to submit mortgage application.");
     }
@@ -136,14 +187,15 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
           </div>
 
           <div className="col-span-1">
-            <input
-              placeholder="Phone Number"
-              type="tel"
+            <InputMask
+              type="text"
               name="clientPhone"
               value={formData.clientPhone}
               onChange={handleChange}
               required
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
+              mask="(999) 999-9999"
+              placeholder="Phone Number"
             />
           </div>
 
@@ -167,10 +219,13 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <button
             type="button"
-            onClick={() => setFormData({ ...formData, loanType: "buy" })}
+            onClick={() =>
+              setFormData({ ...formData, loanType: "HOME_PURCHASE" })
+            }
             style={{
-              backgroundColor: formData.loanType === "buy" ? primaryColor : "",
-              color: formData.loanType === "buy" ? "white" : "",
+              backgroundColor:
+                formData.loanType === "HOME_PURCHASE" ? primaryColor : "",
+              color: formData.loanType === "HOME_PURCHASE" ? "white" : "",
             }}
             className="p-2 border rounded"
           >
@@ -178,11 +233,11 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
           </button>
           <button
             type="button"
-            onClick={() => setFormData({ ...formData, loanType: "refinance" })}
+            onClick={() => setFormData({ ...formData, loanType: "REFINANCE" })}
             style={{
               backgroundColor:
-                formData.loanType === "refinance" ? primaryColor : "",
-              color: formData.loanType === "refinance" ? "white" : "",
+                formData.loanType === "REFINANCE" ? primaryColor : "",
+              color: formData.loanType === "REFINANCE" ? "white" : "",
             }}
             className="p-2 border rounded"
           >
@@ -191,11 +246,11 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
 
           <button
             type="button"
-            onClick={() => setFormData({ ...formData, loanType: "equity" })}
+            onClick={() => setFormData({ ...formData, loanType: "EQUITY" })}
             style={{
               backgroundColor:
-                formData.loanType === "equity" ? primaryColor : "",
-              color: formData.loanType === "equity" ? "white" : "",
+                formData.loanType === "EQUITY" ? primaryColor : "",
+              color: formData.loanType === "EQUITY" ? "white" : "",
             }}
             className="p-2 border rounded"
           >
@@ -275,14 +330,13 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="col-span-1">
             <input
-              type="number"
               name="loanAmount"
               value={formData.loanAmount}
               onChange={handleChange}
               required
+              placeholder="Loan Amount"
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
               autoComplete="off"
-              placeholder="Loan Amount"
             />
           </div>
 
@@ -333,14 +387,23 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         <h2 className="text-lg font-semibold mb-4">Credit Info</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="col-span-1">
-            <input
+            <InputMask
               placeholder="SSN"
-              type="password"
               name="ssn"
               value={formData.ssn}
               onChange={handleChange}
               required
               className="mt-1 block w-full p-2 border border-gray-300 rounded"
+              autoComplete="off"
+              mask="999-99-9999"
+              // convert to text type when user is typing
+              // so that the input is not visible
+              onBlur={(e) => {
+                e.target.type = "password";
+              }}
+              onFocus={(e) => {
+                e.target.type = "text";
+              }}
             />
           </div>
           <div className="col-span-1">

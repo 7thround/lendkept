@@ -1,6 +1,6 @@
 // components/Layout.js
 import React from "react";
-import LogoutButton from "./LogoutButton";
+import LogoutButton from "../LogoutButton";
 
 const Header = () => (
   <header className="bg-blue-600 text-white p-0">
@@ -32,7 +32,8 @@ const Layout = ({
 }) => (
   <div className="flex flex-col min-h-screen">
     {header || <Header />}
-    <main className="flex-grow bg-gray-100 p-6">{children}</main>
+    {/* // top align the children */}
+    <div className="flex-grow bg-gray-100 p-4">{children}</div>
     <Footer />
   </div>
 );

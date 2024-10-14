@@ -1,19 +1,18 @@
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
-import prisma from "../../lib/prisma";
-import { Company, Partner } from "@prisma/client";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/20/solid";
+import InputMask from "react-input-mask";
+import { Partner } from "@prisma/client";
+import prisma from "../../lib/prisma";
 
 export const getServerSideProps = async (context) => {
-  const { query } = context;
-  const { company: companySlug, referralCode } = query;
-
+  const { params } = context;
+  const { company: companySlug } = params;
+  const referralCode = context.query.referralCode || ("" as string);
   try {
     const company = await prisma.company.findUnique({
-      where: {
-        slug: companySlug,
-      },
+      where: { slug: companySlug },
     });
 
     if (!company) {
@@ -22,24 +21,15 @@ export const getServerSideProps = async (context) => {
       };
     }
 
-    const partner = await prisma.partner.findFirst({
+    const partner: Partner = await prisma.partner.findFirst({
       where: {
+        referralCode,
         companyId: company.id,
-        referralCode: referralCode,
       },
     });
 
-    if (!partner) {
-      return {
-        notFound: true,
-      };
-    }
-
     return {
-      props: {
-        company,
-        partner,
-      },
+      props: { company, partner },
     };
   } catch (error) {
     console.error("Error verifying the user:", error);
@@ -53,25 +43,21 @@ export const getServerSideProps = async (context) => {
   }
 };
 
-function RegisterPage({
-  partner,
-  company,
-}: {
-  partner: Partner;
-  company: Company;
-}) {
+function RegisterPage({ partner, company }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [referralCode, setReferralCode] = useState(partner.referralCode);
-  const [companyId, setCompanyId] = useState(company.id);
+  const referralCode = partner.referralCode;
+  const companyId = company.id;
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [zip, setZip] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,14 +77,18 @@ function RegisterPage({
     };
 
     try {
-      await axios.post("/api/auth/register", data);
-      router.push("/login");
+      const res = await axios.post("/api/partners", data);
+      if (res.status === 201) {
+        alert("Registration successful. Please login.");
+        router.push("/");
+      } else {
+        alert("An error occurred. Please try again.");
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Registration error:", error);
+      alert("An error occurred. Please try again.");
     }
   };
-
-  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form
@@ -107,7 +97,7 @@ function RegisterPage({
       style={{ borderColor: company.primaryColor }}
     >
       <div>
-        <h2 className="text-2xl text-center text-bold">{company.name}</h2>
+        <h2 className="text-2xl text-center font-bold">{company.name}</h2>
         <h3
           style={{ color: company.primaryColor }}
           className="text-lg text-center font-bold"
@@ -126,52 +116,21 @@ function RegisterPage({
         </p>
       </div>
       <input
-        autoComplete="new-email"
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="Email"
-        required
-        className="w-full p-2 border rounded"
-      />
-      <div className="flex gap-2 items-center">
-        <input
-          autoComplete="new-password"
-          type={showPassword ? "text" : "password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          required
-          className="w-full p-2 border rounded"
-        />
-        <button
-          className="-ml-10"
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-        >
-          {showPassword ? (
-            <EyeIcon className="h-4" />
-          ) : (
-            <EyeSlashIcon className="h-4" />
-          )}
-        </button>
-      </div>
-      <div className="border-b my-4"></div>
-      <input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder={"Full Name"}
+        placeholder="Full Name"
         required
         className="w-full p-2 border rounded"
       />
-      <input
+      <InputMask
         type="text"
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         placeholder="Phone"
         required
         className="w-full p-2 border rounded"
+        mask="(999) 999-9999"
       />
       <input
         type="text"
@@ -212,6 +171,38 @@ function RegisterPage({
         required
         className="w-full p-2 border rounded"
       />
+      <div className="border-b my-4"></div>
+      <input
+        autoComplete="new-email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+        className="w-full p-2 border rounded"
+      />
+      <div className="flex gap-2 items-center">
+        <input
+          autoComplete="new-password"
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          required
+          className="w-full p-2 border rounded"
+        />
+        <button
+          className="-ml-10"
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+        >
+          {showPassword ? (
+            <EyeIcon className="h-4" />
+          ) : (
+            <EyeSlashIcon className="h-4" />
+          )}
+        </button>
+      </div>
       <button
         type="submit"
         style={{ backgroundColor: company.primaryColor }}
@@ -219,7 +210,6 @@ function RegisterPage({
       >
         Register
       </button>
-      {/* Referral Code Section */}
       {partner && (
         <div className="text-center text-gray-600 mt-6">
           Referred By:{" "}

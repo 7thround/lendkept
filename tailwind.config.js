@@ -9,4 +9,9 @@ module.exports = {
     extend: {},
   },
   plugins: [],
+  safelist: [
+    {
+      pattern: /^(col-span|grid-cols)-\d+$/,
+    },
+  ],
 };

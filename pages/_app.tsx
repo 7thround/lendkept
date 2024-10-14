@@ -1,4 +1,4 @@
-import Layout from "../src/components/Layout";
+import Layout from "../src/components/Layout/Layout";
 import "../src/styles/globals.css";
 
 function App({ Component, pageProps, router }) {
@@ -6,7 +6,7 @@ function App({ Component, pageProps, router }) {
     router.route.includes("/apply") || router.route.includes("/register");
   const { company } = pageProps;
   if (isApplicationPage && company) {
-    const header = (
+    const WhiteLabelHeader = (
       <header className="bg-white text-white p-0 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between gap-4 mx-auto py-4 px-4 sm:px-4 lg:px-8">
           <a href="/" className="flex items-center gap-2">
@@ -20,7 +20,7 @@ function App({ Component, pageProps, router }) {
       </header>
     );
     return (
-      <Layout header={header}>
+      <Layout header={WhiteLabelHeader}>
         <Component {...pageProps} />
       </Layout>
     );

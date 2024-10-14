@@ -1,12 +1,30 @@
 import React from "react";
-import { Role } from "@prisma/client";
+import { Company, Loan, Partner, Role } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import cookie from "cookie";
 import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
 import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
 import prisma from "../lib/prisma";
+import { GetServerSideProps, GetServerSidePropsContext } from "next";
 
-export const getServerSideProps = async (context) => {
+const getUser = async (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+    userId: string;
+    role: string;
+  };
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: decoded.userId,
+    },
+  });
+
+  return user;
+};
+
+export const getServerSideProps: GetServerSideProps = async (
+  context: GetServerSidePropsContext
+) => {
   try {
     const { req } = context;
     const cookies = req.headers.cookie;
@@ -29,35 +47,28 @@ export const getServerSideProps = async (context) => {
 
     const role = decoded.role as Role;
 
-    if (role === "PARTNER") {
-      const user = await prisma.user.findUnique({
-        where: {
-          id: decoded.userId,
-        },
-      });
+    const user = await prisma.user.findUnique({
+      where: {
+        id: decoded.userId,
+      },
+    });
 
-      const partner = await prisma.partner.findUnique({
+    if (role === "PARTNER") {
+      const partnerData = await prisma.partner.findUnique({
         where: {
           id: user.partnerId,
         },
-      });
-
-      if (!user || !partner) {
-        return {
-          redirect: {
-            destination: "/login",
-            permanent: false,
+        include: {
+          company: true,
+          referredPartners: {
+            include: {
+              loans: true,
+            },
           },
-        };
-      }
-
-      const company = await prisma.company.findUnique({
-        where: {
-          id: partner.companyId,
         },
       });
 
-      if (!company) {
+      if (!user || !partnerData || !partnerData.company) {
         return {
           redirect: {
             destination: "/login",
@@ -65,12 +76,66 @@ export const getServerSideProps = async (context) => {
           },
         };
       }
+
+      // include partner name
+      const partnerLoans = await prisma.loan.findMany({
+        where: {
+          partnerId: partnerData.id,
+        },
+      });
+
+      const referredLoans = await prisma.loan.findMany({
+        where: {
+          partnerId: {
+            in: partnerData.referredPartners.map((partner) => partner.id),
+          },
+        },
+        include: {
+          partner: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      const { company, referredPartners } = partnerData;
 
       return {
         props: {
           role,
-          partner,
+          partner: partnerData,
           company,
+          loans: [...partnerLoans, ...referredLoans],
+          partners: referredPartners,
+          referredLoans,
+        },
+      };
+    }
+
+    if (role === "COMPANY") {
+      const company = await prisma.company.findUnique({
+        where: {
+          id: user.companyId,
+        },
+      });
+      const partners = await prisma.partner.findMany({
+        where: {
+          companyId: company.id,
+        },
+      });
+
+      const loans = await prisma.loan.findMany({
+        where: {
+          companyId: company.id,
+        },
+      });
+
+      return {
+        props: {
+          company,
+          loans,
+          partners,
         },
       };
     }
@@ -92,19 +157,35 @@ export const getServerSideProps = async (context) => {
 
 type Props = {
   role: Role;
-  company: any;
-  partner?: any;
+  company: Company;
+  partner?: Partner;
+  loans?: Loan[];
+  referredLoans?: Loan[];
+  partners?: Partner[];
 };
 
-const Home: React.FC<Props> = ({ partner, company, role }: Props) => {
+const Home: React.FC<Props> = ({
+  partner,
+  company,
+  role,
+  loans,
+  partners,
+  referredLoans,
+}: Props) => {
   return (
-    <main>
+    <>
       {role === "PARTNER" ? (
-        <PartnerPortal partner={partner} company={company} />
+        <PartnerPortal
+          partner={partner}
+          company={company}
+          loans={loans}
+          partners={partners}
+          referredLoans={referredLoans}
+        />
       ) : (
-        <CompanyPortal />
+        <CompanyPortal loans={loans} partners={partners} />
       )}
-    </main>
+    </>
   );
 };
 
