@@ -1,4 +1,4 @@
-// src/pages/api/messages/[id].ts
+// src/pages/api/notes/[id].ts
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
 
@@ -10,48 +10,48 @@ export default async function handler(
 
   switch (req.method) {
     case "GET":
-      return getMessage(req, res, id as string);
+      return getNote(req, res, id as string);
     case "PUT":
-      return updateMessage(req, res, id as string);
+      return updateNote(req, res, id as string);
     case "DELETE":
-      return deleteMessage(req, res, id as string);
+      return deleteNote(req, res, id as string);
     default:
       res.setHeader("Allow", ["GET", "PUT", "DELETE"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
 
-async function getMessage(
+async function getNote(
   req: NextApiRequest,
   res: NextApiResponse,
   id: string
 ) {
-  const message = await prisma.message.findUnique({ where: { id } });
-  if (message) {
-    res.status(200).json(message);
+  const note = await prisma.note.findUnique({ where: { id } });
+  if (note) {
+    res.status(200).json(note);
   } else {
-    res.status(404).json({ message: "Message not found" });
+    res.status(404).json({ note: "Note not found" });
   }
 }
 
-async function updateMessage(
+async function updateNote(
   req: NextApiRequest,
   res: NextApiResponse,
   id: string
 ) {
   const { content } = req.body;
-  const updatedMessage = await prisma.message.update({
+  const updatedNote = await prisma.note.update({
     where: { id },
-    data: { content },
+    data: { text: content },
   });
-  res.status(200).json(updatedMessage);
+  res.status(200).json(updatedNote);
 }
 
-async function deleteMessage(
+async function deleteNote(
   req: NextApiRequest,
   res: NextApiResponse,
   id: string
 ) {
-  await prisma.message.delete({ where: { id } });
+  await prisma.note.delete({ where: { id } });
   res.status(204).end();
 }

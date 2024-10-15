@@ -3,6 +3,7 @@ import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
 import { Loan, Partner } from "@prisma/client";
+import { LoanStatusLabels } from "../../constants";
 
 const CompanyPortal = ({
   loans,
@@ -16,7 +17,6 @@ const CompanyPortal = ({
   const [message, setMessage] = useState("");
   const [messageHistory, setMessageHistory] = useState([
     "Welcome to our loan service!",
-    // Add more messages as needed
   ]);
 
   const [companyDetails, setCompanyDetails] = useState({
@@ -24,10 +24,6 @@ const CompanyPortal = ({
     address: "",
     phone: "",
   });
-
-  const handleStatusChange = (loanId, newStatus) => {
-    // Implement status change logic here
-  };
 
   const handleSendMessage = () => {
     setMessageHistory([...messageHistory, message]);
@@ -83,18 +79,7 @@ const CompanyPortal = ({
                         ${loan.loanAmount.toLocaleString()}
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap">
-                        <select
-                          disabled
-                          className=" rounded-lg p-2 brightness-95"
-                          value={loan.status}
-                        >
-                          <option value="SUBMITTED" disabled>
-                            Submitted
-                          </option>
-                          <option value="PROCESSING">Processing</option>
-                          <option value="FUNDED">Funded</option>
-                          <option value="CANCELLED">Cancelled</option>
-                        </select>
+                        {LoanStatusLabels[loan.status]}
                       </td>
                       <td className="text-center py-2 px-4 whitespace-nowrap">
                         <button
@@ -123,6 +108,8 @@ const CompanyPortal = ({
             </table>
           </div>
         </div>
+      </Column>
+      <Column col={4}>
         {/* Referred Partners Panel */}
         <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4">
@@ -167,78 +154,6 @@ const CompanyPortal = ({
           </div>
         </div>
       </Column>
-
-      {/* Right Column */}
-      <Column col={4}>
-        {/* Company Details Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Company Details
-          </h2>
-          <form onSubmit={handleUpdateDetails}>
-            <div className="mb-4">
-              <label className="block text-gray-700">Company Name</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg p-2"
-                placeholder="Company Name"
-                value={companyDetails.name}
-                onChange={(e) =>
-                  setCompanyDetails({
-                    ...companyDetails,
-                    name: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Address</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg p-2"
-                placeholder="Address"
-                value={companyDetails.address}
-                onChange={(e) =>
-                  setCompanyDetails({
-                    ...companyDetails,
-                    address: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Phone</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-lg p-2"
-                placeholder="Phone"
-                value={companyDetails.phone}
-                onChange={(e) =>
-                  setCompanyDetails({
-                    ...companyDetails,
-                    phone: e.target.value,
-                  })
-                }
-              />
-            </div>
-            <button className="bg-green-500 text-white py-2 px-4 rounded-lg">
-              Update Details
-            </button>
-          </form>
-        </div>
-
-        {/* Payouts Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Payouts</h2>
-          <p>Manage your partner payouts here.</p>
-          <button
-            className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-lg"
-            onClick={handleProcessPayouts}
-          >
-            Process Payouts
-          </button>
-        </div>
-      </Column>
       {/* Message Center Panel */}
       <Column col={12}>
         <div className="bg-white shadow rounded-lg p-4">
@@ -258,7 +173,7 @@ const CompanyPortal = ({
           >
             Send Message
           </button>
-          <h3 className="text-xl font-semibold text-gray-900 mt-4 mb-4">
+          <h3 className="text-xl font-semibold text-gray-900 mt-4 ">
             Message History
           </h3>
           <ul className="divide-y divide-gray-200">

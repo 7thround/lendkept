@@ -35,14 +35,51 @@ async function updateLoan(
   res: NextApiResponse,
   id: string
 ) {
-  const { address, details, phone, status, partnerId, companyId } = req.body;
-  const updatedLoan = await prisma.loan.update({
-    where: { id },
-    // @ts-ignore
-    data: { address, details, phone, status, partnerId, companyId },
-  });
-  res.status(200).json(updatedLoan);
+  try {
+    const {
+      clientName,
+      clientPhone,
+      clientEmail,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      zip,
+      loanType,
+      loanAmount,
+      status,
+      paid,
+      partnerId,
+      companyId,
+    } = req.body;
+
+    const updatedLoan = await prisma.loan.update({
+      where: { id },
+      data: {
+        clientName,
+        clientPhone,
+        clientEmail,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        zip,
+        loanType,
+        loanAmount,
+        status,
+        paid,
+        partnerId,
+        companyId,
+      },
+    });
+
+    res.status(200).json(updatedLoan);
+  } catch (error) {
+    console.error("Error updating loan:", error);
+    res.status(500).json({ error: "Failed to update loan" });
+  }
 }
+
 
 async function deleteLoan(
   req: NextApiRequest,

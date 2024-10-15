@@ -1,14 +1,10 @@
 import React, { useState } from "react";
-import {
-  ClipboardIcon,
-  EyeIcon,
-  LinkIcon,
-  TrashIcon,
-} from "@heroicons/react/20/solid";
+import { EyeIcon, LinkIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
-import { Company, Loan, Partner } from "@prisma/client";
+import { Company, Loan, LoanStatus, Partner } from "@prisma/client";
 import { PageContainer, Column } from "../Layout/PageParts";
 import { copyToClipboard } from "../../utils";
+import { LoanStatusLabels } from "../../constants";
 
 const PartnerPortal = ({
   partner,
@@ -111,18 +107,9 @@ const PartnerPortal = ({
                         ${loan.loanAmount.toLocaleString()}
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap">
-                        <select
-                          disabled
-                          className=" rounded-lg p-2 brightness-95"
-                          value={loan.status}
-                        >
-                          <option value="SUBMITTED" disabled>
-                            Submitted
-                          </option>
-                          <option value="PROCESSING">Processing</option>
-                          <option value="FUNDED">Funded</option>
-                          <option value="CANCELLED">Cancelled</option>
-                        </select>
+                        <div className="p-1">
+                          {LoanStatusLabels[loan.status]}
+                        </div>
                       </td>
                       <td className="text-center py-2 px-4 whitespace-nowrap">
                         <button
@@ -181,18 +168,9 @@ const PartnerPortal = ({
                         ${loan.loanAmount.toLocaleString()}
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap">
-                        <select
-                          disabled
-                          className=" rounded-lg p-2 brightness-95"
-                          value={loan.status}
-                        >
-                          <option value="SUBMITTED" disabled>
-                            Submitted
-                          </option>
-                          <option value="PROCESSING">Processing</option>
-                          <option value="FUNDED">Funded</option>
-                          <option value="CANCELLED">Cancelled</option>
-                        </select>
+                        <div className="p-1">
+                          {LoanStatusLabels[loan.status]}
+                        </div>
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap text-center">
                         {/* @ts-ignore */}

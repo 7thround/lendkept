@@ -1,44 +1,43 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
 import { Column, PageContainer } from "../../src/components/Layout/PageParts";
+import prisma from "../../lib/prisma";
+import { formatDateWithTime } from "../../src/utils";
+import { Company, Loan, Note, Partner } from "@prisma/client";
+import { LoanStatusLabels } from "../../src/constants";
 
-const defaultLoan = {
-  id: "1",
-  clientName: "John Doe",
-  clientPhone: "123-456-7890",
-  clientEmail: "johndoe@example.com",
-  addressLine1: "123 Main St",
-  addressLine2: "Apt 4B",
-  city: "New York",
-  state: "NY",
-  zip: "10001",
-  loanType: "Home",
-  loanAmount: 250000.0,
-  status: "Possible Loan",
-  paid: false,
-  partnerId: "partner123",
-  companyId: "company456",
-};
-
-const formatDateWithTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "numeric",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "numeric",
+export const getServerSideProps = async (context) => {
+  const { id } = context.params;
+  const loan = await prisma.loan.findUnique({ where: { id } });
+  const notes = await prisma.note.findMany({
+    where: { loanId: id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      sender: {
+        select: {
+          name: true,
+        },
+      },
+    },
   });
-};
 
-const statuses = [
-  "Possible Loan",
-  "Application Submitted",
-  "Credit and Documents",
-  "Loan Processing",
-  "Underwriting",
-  "Loan Funded",
-];
+  // Convert the Date object to a string
+  const serializedNotes = notes.map((note) => ({
+    ...note,
+    createdAt: note.createdAt.toISOString(),
+  }));
+
+  const partner = await prisma.partner.findUnique({
+    where: { id: loan.partnerId },
+  });
+  const company = await prisma.company.findUnique({
+    where: { id: loan.companyId },
+  });
+
+  return {
+    props: { loan, notes: serializedNotes, partner, company },
+  };
+};
 
 const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
@@ -70,9 +69,9 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
           onChange={handleStatusChange}
           className="p-2 border rounded w-full"
         >
-          {statuses.map((status, index) => (
+          {Object.keys(LoanStatusLabels).map((status, index) => (
             <option key={index} value={status}>
-              {status}
+              {LoanStatusLabels[status]}
             </option>
           ))}
         </select>
@@ -92,7 +91,7 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
             </h4>
             <p>
               Are you sure you want to update the loan status to "
-              {selectedStatus}"?
+              {LoanStatusLabels[selectedStatus]}"?
             </p>
             <div className="flex justify-end space-x-4 mt-4">
               <button
@@ -115,16 +114,18 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
   );
 };
 
+const loanTimelineStatuses = Object.keys(LoanStatusLabels).slice(0, 5);
 const LoanTimeline = ({ currentStatus }) => {
-  const activeStatusColor = (status: string) =>
-    status === "Loan Funded" ? "bg-green-600 " : "bg-blue-600";
+  const activeStatusColor = (status) =>
+    status === "LOAN_FUNDED" ? "bg-green-600" : "bg-blue-600";
+
   return (
     <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border overflow-x-auto">
-      {statuses.map((status, index) => (
+      {loanTimelineStatuses.map((status, index) => (
         <div key={index} className="flex flex-col items-center min-w-max">
           <div
             className={`w-8 h-8 flex items-center justify-center rounded-full ${
-              index <= statuses.indexOf(currentStatus)
+              index <= loanTimelineStatuses.indexOf(currentStatus)
                 ? activeStatusColor(status) + " text-white"
                 : "bg-gray-300 text-gray-600"
             }`}
@@ -133,12 +134,12 @@ const LoanTimeline = ({ currentStatus }) => {
           </div>
           <span
             className={`mt-2 text-xs text-center ${
-              index <= statuses.indexOf(currentStatus)
+              index <= loanTimelineStatuses.indexOf(currentStatus)
                 ? "text-blue-600"
                 : "text-gray-600"
             }`}
           >
-            {status}
+            {LoanStatusLabels[status]}
           </span>
         </div>
       ))}
@@ -146,37 +147,40 @@ const LoanTimeline = ({ currentStatus }) => {
   );
 };
 
-const NotesSection = () => {
-  const [notes, setNotes] = useState([]);
+const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
   const [newNote, setNewNote] = useState("");
 
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (newNote.trim()) {
-      const timestamp = new Date().toLocaleString();
-      setNotes([
-        ...notes,
-        { id: notes.length + 1, author: "You", text: newNote, timestamp },
-      ]);
+      const note = {
+        text: newNote,
+        loanId: loanId,
+        senderId: partner.id,
+        createdAt: new Date(),
+      };
+
+      // Call the function to add the note
+      await onAddNote(note);
+
       setNewNote("");
     }
   };
-
+  console.log(notes);
   return (
     <div className="bg-white shadow rounded-lg p-4">
       <h2 className="text-xl font-semibold text-gray-900 mb-4">Notes</h2>
       <ul className="space-y-4">
-        {notes.map((note, index) => (
-          // add pb-4 unless it's the last note
+        {notes?.map((note, index) => (
           <li
             key={note.id}
             className={` ${
               index !== notes.length - 1 ? "border-b pb-4" : "pb-2"
             }`}
           >
-            <p className="text-gray-800 font-semibold">{note.author}</p>
+            <p className="text-gray-800 font-semibold">{note.sender.name}</p>
             <p className="text-gray-600">{note.text}</p>
             <p className="text-gray-500 text-sm">
-              {formatDateWithTime(note.timestamp)}
+              {formatDateWithTime(note.createdAt)}
             </p>
           </li>
         ))}
@@ -200,12 +204,54 @@ const NotesSection = () => {
   );
 };
 
-const LoanPage = () => {
-  const [loan, setLoan] = useState(defaultLoan);
-  const updateStatus = (newStatus) => {
-    console.log("Status updated to:", newStatus);
-    setLoan({ ...loan, status: newStatus });
+const LoanPage = ({
+  loan,
+  notes,
+  partner,
+  company,
+}: {
+  loan: Loan;
+  notes: Note[];
+  partner: Partner;
+  company: Company;
+}) => {
+  const addNote = async (note) => {
+    const response = await fetch(`/api/notes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(note),
+    });
+
+    if (response.ok) {
+      const newNote = await response.json();
+      console.log("Note added:", newNote);
+    }
   };
+
+  const updateStatus = async (newStatus) => {
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (response.ok) {
+        const updatedLoan = await response.json();
+        console.log("Status updated:", updatedLoan);
+        // Optionally update state or refetch data
+      } else {
+        console.error("Failed to update status");
+      }
+    } catch (error) {
+      console.error("Error updating status:", error);
+    }
+  };
+
   const [messages, setMessages] = useState([
     { id: 1, text: "Initial message", sender: "Partner" },
   ]);
@@ -272,15 +318,34 @@ const LoanPage = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    console.log("Updated Values:", formData);
-    setIsModalOpen(false);
+  const handleSubmit = async () => {
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const updatedLoan = await response.json();
+        console.log("Loan updated:", updatedLoan);
+        // Optionally update state or refetch data
+      } else {
+        console.error("Failed to update loan");
+      }
+    } catch (error) {
+      console.error("Error updating loan:", error);
+    } finally {
+      setIsModalOpen(false);
+    }
   };
 
   const [activities, setActivities] = useState([
-    { id: 1, description: "Application submitted", date: "2024-10-01" },
-    { id: 2, description: "Credit check completed", date: "2024-10-02" },
-    { id: 3, description: "Loan approved", date: "2024-10-03" },
+    { id: 1, description: "Application submitted", date: new Date() },
+    { id: 2, description: "Credit check completed", date: new Date() },
+    { id: 3, description: "Loan approved", date: new Date() },
   ]);
 
   return (
@@ -354,7 +419,7 @@ const LoanPage = () => {
                   <strong>Type:</strong> {loan.loanType}
                 </p>
                 <p>
-                  <strong>Amount:</strong> ${loan.loanAmount.toFixed(2)}
+                  <strong>Amount:</strong> ${loan.loanAmount.toLocaleString()}
                 </p>
                 <p>
                   <strong>Status:</strong> {loan.status}
@@ -368,10 +433,10 @@ const LoanPage = () => {
                   Partner & Company
                 </h2>
                 <p>
-                  <strong>Partner ID:</strong> {loan.partnerId}
+                  <strong>Affiliate Partner:</strong> {partner.name}
                 </p>
                 <p>
-                  <strong>Company ID:</strong> {loan.companyId}
+                  <strong>Company</strong> {company.name}
                 </p>
               </div>
             </div>
@@ -398,7 +463,7 @@ const LoanPage = () => {
                     >
                       <span className="flex-1">{activity.description}</span>
                       <span className="text-gray-500 whitespace-nowrap ml-4">
-                        {formatDateWithTime(activity.date)}
+                        12/24/2021
                       </span>
                     </li>
                     {index !== activities.length - 1 && (
@@ -411,7 +476,12 @@ const LoanPage = () => {
           </div>
         </Column>
         <Column col={12}>
-          <NotesSection />
+          <NotesSection
+            notes={notes}
+            loanId={loan.id}
+            onAddNote={addNote}
+            partner={partner}
+          />
         </Column>
       </PageContainer>
       {/* Edit Modal */}
@@ -540,6 +610,4 @@ const LoanPage = () => {
   );
 };
 
-export default function LoanPageWrapper() {
-  return <LoanPage />;
-}
+export default LoanPage;
