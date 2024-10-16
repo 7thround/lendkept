@@ -135,7 +135,7 @@ const PartnerPortal = ({
           </div>
         </div>
         {/* Partner Loans Panel */}
-        <div className="bg-white shadow rounded-lg flex flex-col flex-grow">
+        <div className="bg-white shadow overflow-hidden rounded-lg flex flex-col flex-grow">
           <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
             Partner Loans
           </h2>
