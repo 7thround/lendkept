@@ -292,7 +292,7 @@ const PartnerPortal = ({
       </Column>
       <Column col={12}>
         {/* Message Center Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
+        <div className="bg-white shadow rounded-lg py-2 p-4">
           <h3 className="text-lg font-semibold text-gray-900">
             Promo Messages
           </h3>
