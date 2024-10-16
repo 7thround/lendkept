@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { EyeIcon, LinkIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
-import { Company, Loan, LoanStatus, Partner } from "@prisma/client";
+import { Company, Loan, Partner } from "@prisma/client";
 import { PageContainer, Column } from "../Layout/PageParts";
 import { copyToClipboard } from "../../utils";
 import { LoanStatusLabels } from "../../constants";
@@ -74,8 +74,8 @@ const PartnerPortal = ({
     <PageContainer>
       <Column col={8}>
         {/* My Loans Panel */}
-        <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 px-4">
+        <div className="bg-white shadow rounded-lg flex flex-col flex-grow">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
             Welcome, {partner.name}!
           </h2>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
@@ -115,7 +115,7 @@ const PartnerPortal = ({
                         <button
                           onClick={() => router.push(`/loans/${loan.id}`)}
                         >
-                          <EyeIcon className="h-5 w-5 text-gray-500" />
+                          <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
                         </button>
                       </td>
                     </tr>
@@ -135,8 +135,8 @@ const PartnerPortal = ({
           </div>
         </div>
         {/* Partner Loans Panel */}
-        <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 px-4">
+        <div className="bg-white shadow rounded-lg flex flex-col flex-grow">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
             Partner Loans
           </h2>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
@@ -195,8 +195,8 @@ const PartnerPortal = ({
       </Column>
       <Column col={4}>
         {/* Refer a Partner Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="bg-white shadow rounded-lg pt-2 p-4">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
             Affiliate Referrals
           </h3>
           <div>
@@ -212,7 +212,7 @@ const PartnerPortal = ({
               />
               <button
                 onClick={handleCopyPartnerLink}
-                className="bg-yellow-500 text-white p-2 rounded-lg shrink-0"
+                className="bg-[#e74949] text-white p-2 rounded-lg shrink-0"
               >
                 {copyPartnerText}
               </button>
@@ -220,7 +220,7 @@ const PartnerPortal = ({
             <div className="">
               <button
                 onClick={handleCopyLink}
-                className="bg-yellow-500 text-white px-2 py-1 rounded-lg shrink-0 flex gap-2 items-center mt-4"
+                className="bg-[#e74949] text-white px-2 py-1 rounded-lg shrink-0 flex gap-2 items-center mt-4"
               >
                 {copyText}
               </button>
@@ -230,7 +230,7 @@ const PartnerPortal = ({
         {/* Affiliate Partners Panel */}
         <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-gray-900">
               Affiliate Partners
             </h2>
           </div>
@@ -273,8 +273,8 @@ const PartnerPortal = ({
           </div>
         </div>
         {/* Affiliate Commissions Panel */}
-        <div className="bg-white shadow rounded-lg p-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+        <div className="bg-white shadow rounded-lg pt-2 px-4">
+          <h2 className="text-lg font-semibold text-gray-900">
             Affiliate Commissions
           </h2>
           <ul className="divide-y divide-gray-200">
@@ -293,7 +293,7 @@ const PartnerPortal = ({
       <Column col={12}>
         {/* Message Center Panel */}
         <div className="bg-white shadow rounded-lg p-4">
-          <h3 className="text-xl font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-gray-900">
             Promo Messages
           </h3>
           <ul className="divide-y divide-gray-200">

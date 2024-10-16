@@ -15,7 +15,7 @@ function formatLoanPayload(payload) {
     zip: payload.zip,
     loanType: payload.loanType,
     loanAmount: parseFloat(payload.loanAmount),
-    status: "APPLICATION",
+    status: "POSSIBLE_LOAN",
     paid: false,
     partnerId: "partner_id_placeholder",
     companyId: "company_id_placeholder",
@@ -85,7 +85,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
     dob: "",
     ssn: "",
   });
-  console.log("formData:", formData);
+  const [loanSubmitted, setLoanSubmitted] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -102,16 +102,12 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
       return;
     }
 
-    console.log("Submitting form data:", formData);
-
     // Format the payload
     const loanPayload = formatLoanPayload(formData);
 
     // Add partner and company IDs to the payload
     loanPayload.partnerId = partner.id;
     loanPayload.companyId = company.id;
-
-    console.log("Submitted payload:", loanPayload);
 
     const response = await fetch("/api/loans", {
       method: "POST",
@@ -142,27 +138,23 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         dob: "",
         ssn: "",
       });
+      setLoanSubmitted(true);
     } else {
       alert("Failed to submit mortgage application.");
     }
   };
 
-  return (
+  return !loanSubmitted ? (
     <form
       onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-4"
-      style={{ borderColor: company.primaryColor }}
+      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-4 border-gray-500  "
     >
       <h1 className="text-2xl font-bold mb-4 text-center">Loan Application</h1>
       {/* Company Info Section */}
       <div className="mb-6">
         <p className="text-sm text-gray-600 text-center">
           You are applying for a mortgage with{" "}
-          <a
-            href={company.url}
-            style={{ color: primaryColor }}
-            className="font-bold"
-          >
+          <a href={company.url} className="font-bold text-black">
             {company.name}
           </a>
           .
@@ -330,6 +322,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div className="col-span-1">
             <input
+              type="number"
               name="loanAmount"
               value={formData.loanAmount}
               onChange={handleChange}
@@ -470,12 +463,25 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
       {partner && (
         <div className="text-center text-gray-600 mt-6">
           Referred By:{" "}
-          <span style={{ color: primaryColor }} className="font-bold">
-            {partner.name}
-          </span>
+          <span className="text-black font-bold">{partner.name}</span>
         </div>
       )}
     </form>
+  ) : (
+    <div className="text-center">
+      <h1 className="text-2xl font-bold mb-4 mt-12">Loan Submitted!</h1>
+      <p className="text-gray-600">
+        Your mortgage application has been submitted successfully. We will
+        review your application and get back to you soon.
+      </p>
+      <button
+        onClick={() => setLoanSubmitted(false)}
+        style={{ backgroundColor: primaryColor }}
+        className="px-6 py-2 text-white rounded mt-6"
+      >
+        Back to Form
+      </button>
+    </div>
   );
 };
 

@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
+import { EyeIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
-import { Loan, Partner } from "@prisma/client";
+import { Company, Loan, Partner } from "@prisma/client";
 import { LoanStatusLabels } from "../../constants";
 
 const CompanyPortal = ({
   loans,
   partners,
+  company,
 }: {
   loans: Loan[];
   partners: Partner[];
+  company: Company;
 }) => {
   const router = useRouter();
 
@@ -19,34 +21,46 @@ const CompanyPortal = ({
     "Welcome to our loan service!",
   ]);
 
-  const [companyDetails, setCompanyDetails] = useState({
-    name: "",
-    address: "",
-    phone: "",
-  });
-
   const handleSendMessage = () => {
     setMessageHistory([...messageHistory, message]);
     setMessage("");
   };
 
-  const handleUpdateDetails = (e) => {
-    e.preventDefault();
-    // Implement update logic here
-  };
+  const [search, setSearch] = useState("");
+  const [filteredLoans, setFilteredLoans] = useState(loans);
 
-  const handleProcessPayouts = () => {
-    // Implement payout processing logic here
+  const handleSearch = () => {
+    setFilteredLoans(
+      loans.filter((loan) =>
+        loan.addressLine1.toLowerCase().includes(search.toLowerCase())
+      )
+    );
   };
 
   return (
     <PageContainer>
       <Column col={8}>
         {/* My Loans Panel */}
-        <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2 px-4">
-            My Loans
-          </h2>
+        <div className="bg-white shadow rounded-lg pt-2 overflow-hidden flex flex-col flex-grow">
+          <div className="flex items-center justify-between mb-2 px-4">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {company.name}
+            </h2>
+            <div className="flex items-center">
+              <input
+                className="border border-gray-300 rounded-lg p-1 px-3"
+                placeholder="Search by address"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <button
+                className="bg-[#e74949] text-white py-1 px-3 rounded-lg ml-2"
+                onClick={handleSearch}
+              >
+                Search
+              </button>
+            </div>
+          </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">
               <thead>
@@ -69,23 +83,23 @@ const CompanyPortal = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {loans.length ? (
-                  loans.map((loan) => (
+                {filteredLoans.length ? (
+                  filteredLoans.map((loan) => (
                     <tr key={loan.id}>
-                      <td className="py-2 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         {loan.addressLine1}
                       </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         ${loan.loanAmount.toLocaleString()}
                       </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         {LoanStatusLabels[loan.status]}
                       </td>
                       <td className="text-center py-2 px-4 whitespace-nowrap">
                         <button
                           onClick={() => router.push(`/loans/${loan.id}`)}
                         >
-                          <EyeIcon className="h-5 w-5 text-gray-500" />
+                          <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
                         </button>
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap text-center">
@@ -100,7 +114,13 @@ const CompanyPortal = ({
                       className="py-2 px-4 whitespace-nowrap text-center"
                       colSpan={4}
                     >
-                      <div>No loans yet</div>
+                      <div>
+                        {filteredLoans.length
+                          ? ""
+                          : loans.length
+                          ? "No loans found"
+                          : "No loans yet"}
+                      </div>
                     </td>
                   </tr>
                 )}
@@ -111,8 +131,8 @@ const CompanyPortal = ({
       </Column>
       <Column col={4}>
         {/* Referred Partners Panel */}
-        <div className="bg-white shadow rounded-lg py-2 flex flex-col flex-grow">
-          <div className="flex items-center justify-between mb-2 px-4">
+        <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col flex-grow">
+          <div className="flex items-center justify-between mb-2 px-4 pt-2">
             <h2 className="text-xl font-semibold text-gray-900">Partners</h2>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
@@ -131,11 +151,11 @@ const CompanyPortal = ({
                 {partners.length ? (
                   partners.map((partner) => (
                     <tr key={partner.id}>
-                      <td className="py-2 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         {partner.name}
                       </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        {partner.email}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {partner.email.toLocaleLowerCase()}
                       </td>
                     </tr>
                   ))
@@ -168,7 +188,7 @@ const CompanyPortal = ({
             onChange={(e) => setMessage(e.target.value)}
           ></textarea>
           <button
-            className="mt-2 bg-blue-500 text-white py-2 px-4 rounded-lg"
+            className="mt-2 bg-[#e74949] text-white py-2 px-4 rounded-lg"
             onClick={handleSendMessage}
           >
             Send Message
@@ -184,10 +204,10 @@ const CompanyPortal = ({
               >
                 <span>{msg}</span>
                 <div>
-                  <button className="text-blue-600 hover:text-blue-900 mr-2">
+                  <button className="text-[#e74949] hover:text-blue-900 mr-2">
                     Edit
                   </button>
-                  <button className="text-red-400 hover:text-red-900">
+                  <button className="text-[#e74949] hover:text-blue-900">
                     Delete
                   </button>
                 </div>

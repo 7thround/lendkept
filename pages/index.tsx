@@ -7,7 +7,7 @@ import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
 import prisma from "../lib/prisma";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 
-const getUser = async (token) => {
+export const getUser = async (token) => {
   const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
     userId: string;
     role: string;
@@ -109,6 +109,7 @@ export const getServerSideProps: GetServerSideProps = async (
           loans: [...partnerLoans],
           partners: referredPartners,
           referredLoans,
+          user,
         },
       };
     }
@@ -129,6 +130,13 @@ export const getServerSideProps: GetServerSideProps = async (
         where: {
           companyId: company.id,
         },
+        include: {
+          partner: {
+            select: {
+              name: true,
+            },
+          },
+        },
       });
 
       return {
@@ -136,6 +144,7 @@ export const getServerSideProps: GetServerSideProps = async (
           company,
           loans,
           partners,
+          user,
         },
       };
     }
@@ -183,7 +192,7 @@ const Home: React.FC<Props> = ({
           referredLoans={referredLoans}
         />
       ) : (
-        <CompanyPortal loans={loans} partners={partners} />
+        <CompanyPortal loans={loans} partners={partners} company={company} />
       )}
     </>
   );

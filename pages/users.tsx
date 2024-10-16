@@ -215,7 +215,7 @@ function UsersPage() {
       />
       <button
         type="submit"
-        className="w-full p-2 bg-blue-600 text-white rounded"
+        className="w-full p-2 bg-[#e74949] text-white rounded"
       >
         Register
       </button>

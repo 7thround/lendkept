@@ -3,8 +3,10 @@ import React, { useState } from "react";
 import { Column, PageContainer } from "../../src/components/Layout/PageParts";
 import prisma from "../../lib/prisma";
 import { formatDateWithTime } from "../../src/utils";
-import { Company, Loan, Note, Partner } from "@prisma/client";
+import { Company, Loan, Note, Partner, User } from "@prisma/client";
 import { LoanStatusLabels } from "../../src/constants";
+import { getUser } from "..";
+import cookie from "cookie";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
@@ -34,8 +36,19 @@ export const getServerSideProps = async (context) => {
     where: { id: loan.companyId },
   });
 
+  const { req } = context;
+  const cookies = req.headers.cookie;
+  const parsedCookies = cookie.parse(cookies || "");
+  const token = parsedCookies.token;
+
   return {
-    props: { loan, notes: serializedNotes, partner, company },
+    props: {
+      loan,
+      notes: serializedNotes,
+      partner,
+      company,
+      user: await getUser(token),
+    },
   };
 };
 
@@ -77,7 +90,7 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
         </select>
         <button
           onClick={handleUpdateClick}
-          className="p-2 bg-blue-600 text-white rounded"
+          className="p-2 bg-[#e74949] text-white rounded"
         >
           Update
         </button>
@@ -102,7 +115,7 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
               </button>
               <button
                 onClick={handleConfirmUpdate}
-                className="p-2 bg-blue-600 text-white rounded"
+                className="p-2 bg-[#e74949] text-white rounded"
               >
                 Confirm
               </button>
@@ -117,8 +130,31 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
 const loanTimelineStatuses = Object.keys(LoanStatusLabels).slice(0, 5);
 const LoanTimeline = ({ currentStatus }) => {
   const activeStatusColor = (status) =>
-    status === "LOAN_FUNDED" ? "bg-green-600" : "bg-blue-600";
-
+    status === "LOAN_FUNDED" ? "bg-green-600" : "bg-[#e74949]";
+  const inactiveStatuses = ["ON_HOLD", "CANCELLED", "NOT_QUALIFIED"];
+  const isInactive = inactiveStatuses.includes(currentStatus);
+  if (isInactive) {
+    return (
+      <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border overflow-x-auto">
+        {loanTimelineStatuses.map((status, index) => (
+          <div key={index} className="flex flex-col items-center min-w-max">
+            <div
+              className={`w-8 h-8 flex items-center justify-center rounded-full ${
+                index <= loanTimelineStatuses.indexOf(currentStatus)
+                  ? activeStatusColor(status) + " text-white"
+                  : "bg-gray-300 text-gray-600"
+              }`}
+            >
+              {index + 1}
+            </div>
+            <span className={`mt-2 text-xs text-center`}>
+              {LoanStatusLabels[status]}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border overflow-x-auto">
       {loanTimelineStatuses.map((status, index) => (
@@ -132,13 +168,7 @@ const LoanTimeline = ({ currentStatus }) => {
           >
             {index + 1}
           </div>
-          <span
-            className={`mt-2 text-xs text-center ${
-              index <= loanTimelineStatuses.indexOf(currentStatus)
-                ? "text-blue-600"
-                : "text-gray-600"
-            }`}
-          >
+          <span className={`mt-2 text-xs text-center`}>
             {LoanStatusLabels[status]}
           </span>
         </div>
@@ -167,8 +197,8 @@ const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
   };
   console.log(notes);
   return (
-    <div className="bg-white shadow rounded-lg p-4">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Notes</h2>
+    <div className="bg-white shadow rounded-lg pt-2 p-4">
+      <h2 className="text-xl font-semibold text-gray-900 mb-2">Notes</h2>
       <ul className="space-y-4">
         {notes?.map((note, index) => (
           <li
@@ -195,7 +225,7 @@ const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
         ></textarea>
         <button
           onClick={handleAddNote}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="mt-2 px-4 py-2 bg-[#e74949] text-white rounded hover:bg-[#e74949]"
         >
           Add Note
         </button>
@@ -209,11 +239,13 @@ const LoanPage = ({
   notes,
   partner,
   company,
+  user,
 }: {
   loan: Loan;
   notes: Note[];
   partner: Partner;
   company: Company;
+  user: User;
 }) => {
   const addNote = async (note) => {
     const response = await fetch(`/api/notes`, {
@@ -352,7 +384,7 @@ const LoanPage = ({
     <>
       <PageContainer>
         <Column col={8}>
-          <div className="bg-white shadow rounded-lg p-4 flex-grow">
+          <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
             <h1 className="text-xl font-semibold text-gray-900 mb-4">
               Loan Details
             </h1>
@@ -364,7 +396,7 @@ const LoanPage = ({
                   Client Information
                   <button
                     onClick={() => openModal("client")}
-                    className="text-blue-500"
+                    className="text-[#e74949]"
                   >
                     <PencilSquareIcon className="h-5 w-5" />
                   </button>
@@ -384,7 +416,7 @@ const LoanPage = ({
                   Property Address
                   <button
                     onClick={() => openModal("address")}
-                    className="text-blue-500"
+                    className="text-[#e74949]"
                   >
                     <PencilSquareIcon className="h-5 w-5" />
                   </button>
@@ -410,7 +442,7 @@ const LoanPage = ({
                   Loan Details
                   <button
                     onClick={() => openModal("loan")}
-                    className="text-blue-500"
+                    className="text-[#e74949]"
                   >
                     <PencilSquareIcon className="h-5 w-5" />
                   </button>
@@ -444,12 +476,14 @@ const LoanPage = ({
         </Column>
         <Column col={4}>
           {/* Status Panel */}
-          <UpdateStatusPanel
-            currentStatus={loan.status}
-            updateStatus={updateStatus}
-          />
+          {user.role === "COMPANY" && (
+            <UpdateStatusPanel
+              currentStatus={loan.status}
+              updateStatus={updateStatus}
+            />
+          )}
           {/* Activity Log */}
-          <div className="bg-white shadow rounded-lg p-4">
+          <div className="bg-white shadow rounded-lg pt-2 p-4">
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-2 pb-2">
                 Activity Log
@@ -598,7 +632,7 @@ const LoanPage = ({
               </button>
               <button
                 onClick={handleSubmit}
-                className="bg-blue-500 text-white py-2 px-4 rounded-lg"
+                className="bg-[#e74949] text-white py-2 px-4 rounded-lg"
               >
                 Save
               </button>

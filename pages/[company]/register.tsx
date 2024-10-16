@@ -98,10 +98,7 @@ function RegisterPage({ partner, company }) {
     >
       <div>
         <h2 className="text-2xl text-center font-bold">{company.name}</h2>
-        <h3
-          style={{ color: company.primaryColor }}
-          className="text-lg text-center font-bold"
-        >
+        <h3 className="text-center font-semibold text-black">
           Partner Registration
         </h3>
         <p className="text-center text-gray-600">
@@ -206,16 +203,14 @@ function RegisterPage({ partner, company }) {
       <button
         type="submit"
         style={{ backgroundColor: company.primaryColor }}
-        className="w-full p-2 bg-blue-600 text-white rounded"
+        className="w-full p-2 bg-[#e74949] text-white rounded"
       >
         Register
       </button>
       {partner && (
         <div className="text-center text-gray-600 mt-6">
           Referred By:{" "}
-          <span style={{ color: company.primaryColor }} className="font-bold">
-            {partner.name}
-          </span>
+          <span className="font-bold text-black">{partner.name}</span>
         </div>
       )}
     </form>
