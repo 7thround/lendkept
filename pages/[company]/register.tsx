@@ -48,7 +48,7 @@ function RegisterPage({ partner, company }) {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const referralCode = partner.referralCode;
+  const referralCode = partner?.referralCode;
   const companyId = company.id;
   const [addressLine1, setAddressLine1] = useState("");
   const [addressLine2, setAddressLine2] = useState("");

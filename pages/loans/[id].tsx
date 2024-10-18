@@ -258,6 +258,7 @@ const LoanPage = ({
 
     if (response.ok) {
       const newNote = await response.json();
+      window.location.reload();
       console.log("Note added:", newNote);
     }
   };
@@ -275,7 +276,7 @@ const LoanPage = ({
       if (response.ok) {
         const updatedLoan = await response.json();
         console.log("Status updated:", updatedLoan);
-        // Optionally update state or refetch data
+        window.location.reload();
       } else {
         console.error("Failed to update status");
       }
@@ -363,7 +364,7 @@ const LoanPage = ({
       if (response.ok) {
         const updatedLoan = await response.json();
         console.log("Loan updated:", updatedLoan);
-        // Optionally update state or refetch data
+        window.location.reload();
       } else {
         console.error("Failed to update loan");
       }

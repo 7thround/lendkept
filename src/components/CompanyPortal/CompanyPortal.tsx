@@ -59,6 +59,12 @@ const CompanyPortal = ({
               >
                 Search
               </button>
+              <button
+                className="border border-gray-300 text-gray-500 py-1 px-3 rounded-lg ml-2"
+                onClick={() => router.push(`${company.slug}/new-loan`)}
+              >
+                New Loan
+              </button>
             </div>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
@@ -134,6 +140,12 @@ const CompanyPortal = ({
         <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4 pt-2">
             <h2 className="text-xl font-semibold text-gray-900">Partners</h2>
+            <button
+              className="bg-[#e74949] text-white py-1 px-3 rounded-lg text-sm"
+              onClick={() => router.push(`${company.slug}/register`)}
+            >
+              New Partner
+            </button>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">

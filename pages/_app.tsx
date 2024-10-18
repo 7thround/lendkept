@@ -1,9 +1,15 @@
+import ArrowLeftCircleIcon from "@heroicons/react/20/solid/ArrowLeftCircleIcon";
 import Layout from "../src/components/Layout/Layout";
 import "../src/styles/globals.css";
 
 function App({ Component, pageProps, router }) {
   const isApplicationPage =
     router.route.includes("/apply") || router.route.includes("/register");
+  const showBackButton =
+    router.route.includes("/register") ||
+    router.route.includes("/apply") ||
+    router.route.includes("/new-loan") ||
+    router.route.includes("loans");
   const { company } = pageProps;
   if (isApplicationPage && company) {
     const WhiteLabelHeader = (
@@ -16,17 +22,26 @@ function App({ Component, pageProps, router }) {
               <h1 className="text-2xl">{company.name}</h1>
             )}
           </a>
+          {showBackButton && (
+            <button
+              onClick={() => window.history.back()}
+              className="text-white mr-2 text-sm"
+            >
+              <ArrowLeftCircleIcon />
+              Back
+            </button>
+          )}
         </div>
       </header>
     );
     return (
-      <Layout header={WhiteLabelHeader}>
+      <Layout header={WhiteLabelHeader} showBackButton={showBackButton}>
         <Component {...pageProps} />
       </Layout>
     );
   }
   return (
-    <Layout {...pageProps}>
+    <Layout {...pageProps} showBackButton={showBackButton}>
       <Component {...pageProps} />
     </Layout>
   );
