@@ -68,6 +68,7 @@ model User {
   company   Company? @relation(fields: [companyId], references: [id])
   partnerId String?  @unique
   partner   Partner? @relation(fields: [partnerId], references: [id])
+  name      String?
 }
 
 enum Role {

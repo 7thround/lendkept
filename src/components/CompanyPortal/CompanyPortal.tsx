@@ -2,17 +2,19 @@ import { useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
-import { Company, Loan, Partner } from "@prisma/client";
+import { Company, Loan, Partner, User } from "@prisma/client";
 import { LoanStatusLabels } from "../../constants";
 
 const CompanyPortal = ({
   loans,
   partners,
   company,
+  user,
 }: {
   loans: Loan[];
   partners: Partner[];
   company: Company;
+  user: User;
 }) => {
   const router = useRouter();
 
@@ -65,9 +67,7 @@ const CompanyPortal = ({
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg pt-2 overflow-hidden flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {company.name}
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
             <div className="flex items-center">
               <input
                 className="border border-gray-300 rounded-lg p-1 px-3"

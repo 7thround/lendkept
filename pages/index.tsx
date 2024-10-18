@@ -1,5 +1,5 @@
 import React from "react";
-import { Company, Loan, Partner, Role } from "@prisma/client";
+import { Company, Loan, Partner, Role, User } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import cookie from "cookie";
 import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
@@ -171,6 +171,7 @@ type Props = {
   loans?: Loan[];
   referredLoans?: Loan[];
   partners?: Partner[];
+  user: User;
 };
 
 const Home: React.FC<Props> = ({
@@ -180,6 +181,7 @@ const Home: React.FC<Props> = ({
   loans,
   partners,
   referredLoans,
+  user,
 }: Props) => {
   return (
     <>
@@ -192,7 +194,12 @@ const Home: React.FC<Props> = ({
           referredLoans={referredLoans}
         />
       ) : (
-        <CompanyPortal loans={loans} partners={partners} company={company} />
+        <CompanyPortal
+          loans={loans}
+          partners={partners}
+          company={company}
+          user={user}
+        />
       )}
     </>
   );
