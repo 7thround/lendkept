@@ -52,10 +52,10 @@ model Company {
 model Note {
   id        String   @default(uuid()) @id
   text      String
-  loan      Loan     @relation(fields: [loanId], references: [id])
+  loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
   loanId    String
-  sender    Partner  @relation(fields: [senderId], references: [id])
-  senderId  String
+  sender    Partner? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderId  String?
   createdAt DateTime @default(now())
 }
 
@@ -95,7 +95,7 @@ model Loan {
   partnerId    String
   company      Company    @relation(fields: [companyId], references: [id])
   companyId    String
-  notes     Note[]
+  notes        Note[]
 }
 
 enum LoanType {

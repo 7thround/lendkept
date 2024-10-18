@@ -11,6 +11,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       return getPartner(req, res, id as string);
     case "PUT":
       return updatePartner(req, res, id as string);
+    case "DELETE":
+      return deletePartner(req, res, id as string);
     default:
       res.setHeader("Allow", ["GET", "PUT"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -53,6 +55,16 @@ const updatePartner = async (
 
   res.status(200).json(partner);
 };
+
+const deletePartner = async (
+  req: NextApiRequest,
+  res: NextApiResponse,
+  id: string
+) => {
+  await prisma.partner.delete({ where: { id } });
+
+  res.status(200).json({ message: "Partner deleted successfully" });
+}
 
 export default authenticate(
   authorize(["ADMIN", "COMPANY", "PARTNER"])(handler)

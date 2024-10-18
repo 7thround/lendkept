@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EyeIcon } from "@heroicons/react/20/solid";
+import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
 import { Company, Loan, Partner } from "@prisma/client";
@@ -35,6 +35,28 @@ const CompanyPortal = ({
         loan.addressLine1.toLowerCase().includes(search.toLowerCase())
       )
     );
+  };
+
+  const handleDeleteLoan = async (id: string) => {
+    const res = await fetch(`/api/loans/${id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setFilteredLoans(filteredLoans.filter((loan) => loan.id !== id));
+      alert("Loan deleted successfully");
+    }
+  };
+
+  const handleDeletePartner = async (id: string) => {
+    const res = await fetch(`/api/partners/${id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setFilteredLoans(filteredLoans.filter((partner) => partner.id !== id));
+      alert("Partner deleted successfully");
+    }
   };
 
   return (
@@ -81,10 +103,10 @@ const CompanyPortal = ({
                     Status
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    View
+                    Referred By
                   </th>
                   <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Referred By
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -101,16 +123,21 @@ const CompanyPortal = ({
                       <td className="py-3 px-4 whitespace-nowrap">
                         {LoanStatusLabels[loan.status]}
                       </td>
-                      <td className="text-center py-2 px-4 whitespace-nowrap">
-                        <button
-                          onClick={() => router.push(`/loans/${loan.id}`)}
-                        >
-                          <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                        </button>
-                      </td>
                       <td className="py-2 px-4 whitespace-nowrap text-center">
                         {/* @ts-ignore */}
                         {loan.partner ? loan.partner.name : "-"}
+                      </td>
+                      <td className="text-center py-2 px-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => router.push(`/loans/${loan.id}`)}
+                          >
+                            <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+                          </button>
+                          <button onClick={() => handleDeleteLoan(loan.id)}>
+                            <TrashIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -157,6 +184,9 @@ const CompanyPortal = ({
                   <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
+                  {/* <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th> */}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -169,6 +199,15 @@ const CompanyPortal = ({
                       <td className="py-3 px-4 whitespace-nowrap">
                         {partner.email.toLocaleLowerCase()}
                       </td>
+                      {/* <td className="text-center py-2 px-4 whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleDeletePartner(partner.id)}
+                          >
+                            <TrashIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
+                          </button>
+                        </div>
+                      </td> */}
                     </tr>
                   ))
                 ) : (
