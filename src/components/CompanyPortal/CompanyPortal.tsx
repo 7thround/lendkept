@@ -67,7 +67,9 @@ const CompanyPortal = ({
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg pt-2 overflow-hidden flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4">
-            <h2 className="text-xl font-semibold text-gray-900">{user.name}</h2>
+            <h2 className="text-xl font-semibold text-gray-900">
+              {`Welcome back, ${user.name}` || company.name}
+            </h2>
             <div className="flex items-center">
               <input
                 className="border border-gray-300 rounded-lg p-1 px-3"
