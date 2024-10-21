@@ -1,8 +1,4 @@
-import {
-  EnvelopeIcon,
-  InboxIcon,
-  PencilSquareIcon,
-} from "@heroicons/react/20/solid";
+import { PencilSquareIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
 import {
   Column,
@@ -10,7 +6,7 @@ import {
 } from "../../../src/components/Layout/PageParts";
 import prisma from "../../../lib/prisma";
 import { formatDateWithTime } from "../../../src/utils";
-import { Company, Loan, Note, Partner, User } from "@prisma/client";
+import { Company, LoanType, Note, Partner, User } from "@prisma/client";
 import { LoanStatusLabels } from "../../../src/constants";
 import { getUser } from "../..";
 import cookie from "cookie";
@@ -359,7 +355,10 @@ const LoanPage = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({
+          ...loan,
+          status: newStatus,
+        }),
       });
 
       if (response.ok) {
@@ -480,9 +479,23 @@ const LoanPage = ({
       <PageContainer>
         <Column col={8}>
           <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
-            <h1 className="text-lg font-semibold text-gray-900 mb-4">
-              Loan Details
-            </h1>
+            <div className="flex justify-between items-center">
+              <h1 className="text-xl font-semibold text-gray-900">
+                Loan Details
+              </h1>
+              <button
+                className="px-2 py-1 mt-1 border border-[#e74949] text-[#e74949] rounded-lg flex items-center space-x-2 text-sm"
+                onClick={(e) => {
+                  navigator.clipboard.writeText(loanLink);
+                  (e.target as HTMLButtonElement).textContent = "Copied!";
+                  setTimeout(() => {
+                    (e.target as HTMLButtonElement).textContent = "Share Link";
+                  }, 1000);
+                }}
+              >
+                Share Link
+              </button>
+            </div>
             <div className="text-center font-semibold pb-2">Loan Timeline</div>
             <LoanTimeline currentStatus={loan.status} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -591,33 +604,6 @@ const LoanPage = ({
               updateStatus={updateStatus}
             />
           )}
-
-          {/* Copy Loan Link */}
-          <div className="bg-white shadow rounded-lg pt-2 p-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">
-              Shareable Link
-            </h2>
-            <div className="flex items-center space-x-2">
-              <input
-                type="text"
-                className="p-2 border rounded w-full"
-                value={loanLink}
-                disabled
-              />
-              <button
-                className="p-2 bg-[#e74949] text-white rounded"
-                onClick={(e) => {
-                  navigator.clipboard.writeText(loanLink);
-                  (e.target as HTMLButtonElement).textContent = "Copied!";
-                  setTimeout(() => {
-                    (e.target as HTMLButtonElement).textContent = "Copy";
-                  }, 2000);
-                }}
-              >
-                Copy
-              </button>
-            </div>
-          </div>
           {/* Activity Log
           <div className="bg-white shadow rounded-lg pt-2 p-4">
             <div>
@@ -737,14 +723,18 @@ const LoanPage = ({
                   <label className="block text-sm text-gray-600">
                     Loan Type
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="loanType"
                     value={formData.loanType}
                     onChange={handleInputChange}
-                    placeholder="Loan Type"
                     className="w-full border border-gray-300 rounded-lg p-2"
-                  />
+                  >
+                    {Object.keys(LoanType).map((type, index) => (
+                      <option key={index} value={type}>
+                        {LoanType[type]}
+                      </option>
+                    ))}
+                  </select>
                   <label className="block text-sm text-gray-600">
                     Loan Amount
                   </label>
