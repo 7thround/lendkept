@@ -77,7 +77,7 @@ const PartnerPortal = ({
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg flex flex-col flex-grow">
           <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
-            Welcome, {partner.name}!
+            Loans
           </h2>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
@@ -168,16 +168,12 @@ const LoanAdminsPanel = ({ company, loanAdmins }) => {
   );
 };
 const CompanyPortal = ({
-  loans,
   partners,
   company,
-  user,
   loanAdmins,
 }: {
-  loans: LoanWithAddress[];
   partners: Partner[];
   company: Company;
-  user: User;
   loanAdmins: User[];
 }) => {
   const router = useRouter();
@@ -190,17 +186,6 @@ const CompanyPortal = ({
   const handleSendMessage = () => {
     setMessageHistory([...messageHistory, message]);
     setMessage("");
-  };
-
-  const [search, setSearch] = useState("");
-  const [filteredLoans, setFilteredLoans] = useState(loans);
-
-  const handleSearch = () => {
-    setFilteredLoans(
-      loans.filter((loan) =>
-        loan.address.addressLine1.toLowerCase().includes(search.toLowerCase())
-      )
-    );
   };
 
   const [confirmModal, setConfirmModal] = useState({
@@ -222,7 +207,6 @@ const CompanyPortal = ({
     });
 
     if (res.ok) {
-      setFilteredLoans(filteredLoans.filter((loan) => loan.id !== id));
       alert("Loan deleted successfully");
     }
   };
@@ -233,7 +217,6 @@ const CompanyPortal = ({
     });
 
     if (res.ok) {
-      setFilteredLoans(filteredLoans.filter((partner) => partner.id !== id));
       alert("Partner deleted successfully");
       window.location.reload();
     }
@@ -261,13 +244,38 @@ const CompanyPortal = ({
     });
   };
 
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [referredByFilter, setReferredByFilter] = useState("");
+  const [sortColumn, setSortColumn] = useState("");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [loans, setLoans] = useState([]);
+
+  const fetchLoans = async () => {
+    try {
+      const response = await fetch(
+        `/api/loans?search=${search}&status=${statusFilter}&referredBy=${referredByFilter}&sortColumn=${sortColumn}&sortDirection=${sortDirection}`
+      );
+      const data = await response.json();
+      setLoans(data);
+    } catch (error) {
+      console.error("Failed to fetch loans:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLoans();
+  }, [search, statusFilter, referredByFilter, sortColumn, sortDirection]);
+
   return (
     <PageContainer>
       <Column col={8}>
         {/* My Loans Panel */}
-        <div className="bg-white shadow rounded-lg pt-2 overflow-hidden flex flex-col flex-grow">
-          <div className="flex items-center justify-between mb-2 px-4">
-            <h2 className="text-xl font-semibold text-gray-900">Loans</h2>
+        <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col flex-grow">
+          <div className="flex px-4 py-2 justify-between items-center overflow-auto gap-2">
+            <h2 className="text-xl font-semibold text-gray-900 shrink-0">
+              My Loans
+            </h2>
             <div className="flex items-center">
               <input
                 className="border border-gray-300 rounded-lg p-1 px-3"
@@ -275,18 +283,30 @@ const CompanyPortal = ({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
-              <button
-                className="bg-[#e74949] text-white py-1 px-3 rounded-lg ml-2"
-                onClick={handleSearch}
+              <select
+                className="border border-gray-300 rounded-lg p-1 px-3 ml-2"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
               >
-                Search
-              </button>
-              <button
-                className="border border-gray-300 text-gray-500 py-1 px-3 rounded-lg ml-2"
-                onClick={() => router.push(`${company.slug}/new-loan`)}
+                <option value="">All Statuses</option>
+                {Object.keys(LoanStatusLabels).map((status) => (
+                  <option key={status} value={status}>
+                    {LoanStatusLabels[status]}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="border border-gray-300 rounded-lg p-1 px-3 ml-2"
+                value={referredByFilter}
+                onChange={(e) => setReferredByFilter(e.target.value)}
               >
-                New Loan
-              </button>
+                <option value="">All Partners</option>
+                {partners.map((partner) => (
+                  <option key={partner.id} value={partner.name}>
+                    {partner.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
@@ -311,8 +331,8 @@ const CompanyPortal = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredLoans.length ? (
-                  filteredLoans.map((loan) => (
+                {loans.length ? (
+                  loans.map((loan) => (
                     <tr key={loan.id}>
                       <td className="py-3 px-4 whitespace-nowrap">
                         {loan.address.addressLine1}
@@ -348,7 +368,7 @@ const CompanyPortal = ({
                       colSpan={5}
                     >
                       <div>
-                        {filteredLoans.length
+                        {loans.length
                           ? ""
                           : loans.length
                           ? "No loans found"

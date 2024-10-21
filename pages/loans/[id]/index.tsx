@@ -20,7 +20,7 @@ export const getServerSideProps = async (context) => {
   const { id } = context.params;
 
   const loan = await prisma.loan.findUnique({
-    where: { id: id },
+    where: { id: Number(id) },
     include: {
       address: true,
     },
@@ -38,7 +38,7 @@ export const getServerSideProps = async (context) => {
     },
   });
   const notes = await prisma.note.findMany({
-    where: { loanId: id },
+    where: { loanId: Number(id) },
     orderBy: { createdAt: "desc" },
     include: {
       sender: {
@@ -69,6 +69,15 @@ export const getServerSideProps = async (context) => {
   const cookies = req.headers.cookie;
   const parsedCookies = cookie.parse(cookies || "");
   const token = parsedCookies.token;
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
 
   return {
     props: {
@@ -108,8 +117,8 @@ const LoanAdminsPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
   };
 
   return (
-    <div className="p-4 bg-white shadow rounded-lg">
-      <h3 className="text-lg font-semibold mb-1">Assigned Admin</h3>
+    <div className="mt-2">
+      <h3 className="font-semibold mb-1">Assigned Admin</h3>
       <select
         onChange={handleChange}
         className="p-2 border rounded w-full"
@@ -255,7 +264,7 @@ const LoanTimeline = ({ currentStatus }) => {
   );
 };
 
-const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
+const NotesSection = ({ notes, loanId, onAddNote, sender }) => {
   const [newNote, setNewNote] = useState("");
 
   const handleAddNote = async () => {
@@ -263,7 +272,7 @@ const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
       const note = {
         text: newNote,
         loanId: loanId,
-        senderId: partner.id,
+        senderId: sender.id,
         createdAt: new Date(),
       };
 
@@ -464,7 +473,7 @@ const LoanPage = ({
     { id: 3, description: "Loan approved", date: new Date() },
   ]);
 
-  const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/loans/${loan.id}?access_code=${loan.accessCode}`;
+  const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/loans/${loan.id}/read_only?access_code=${loan.accessCode}`;
 
   return (
     <>
@@ -545,6 +554,18 @@ const LoanPage = ({
                 <p>
                   <strong>Paid:</strong> {loan.paid ? "Yes" : "No"}
                 </p>
+                {/* Loan Admins Panel */}
+                {user.role === "COMPANY" && (
+                  <LoanAdminsPanel
+                    availableLoanAdmins={availableLoanAdmins}
+                    selectedAdmin={
+                      availableLoanAdmins.filter(
+                        (admin) => admin.id === loan.loanAdminId
+                      )[0]
+                    }
+                    loan={loan}
+                  />
+                )}
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
@@ -564,27 +585,16 @@ const LoanPage = ({
         </Column>
         <Column col={4}>
           {/* Status Panel */}
-          {user.role === "COMPANY" && (
+          {["COMPANY", "LOAN_ADMIN"].includes(user.role) && (
             <UpdateStatusPanel
               currentStatus={loan.status}
               updateStatus={updateStatus}
             />
           )}
-          {/* Loan Admins Panel */}
-          {user.role === "COMPANY" && (
-            <LoanAdminsPanel
-              availableLoanAdmins={availableLoanAdmins}
-              selectedAdmin={
-                availableLoanAdmins.filter(
-                  (admin) => admin.id === loan.loanAdminId
-                )[0]
-              }
-              loan={loan}
-            />
-          )}
+
           {/* Copy Loan Link */}
           <div className="bg-white shadow rounded-lg pt-2 p-4">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2 pb-2">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">
               Shareable Link
             </h2>
             <div className="flex items-center space-x-2">
@@ -592,6 +602,7 @@ const LoanPage = ({
                 type="text"
                 className="p-2 border rounded w-full"
                 value={loanLink}
+                disabled
               />
               <button
                 className="p-2 bg-[#e74949] text-white rounded"
@@ -607,7 +618,7 @@ const LoanPage = ({
               </button>
             </div>
           </div>
-          {/* Activity Log */}
+          {/* Activity Log
           <div className="bg-white shadow rounded-lg pt-2 p-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-2 pb-2">
@@ -632,14 +643,14 @@ const LoanPage = ({
                 ))}
               </ul>
             </div>
-          </div>
+          </div> */}
         </Column>
         <Column col={12}>
           <NotesSection
             notes={notes}
             loanId={loan.id}
             onAddNote={addNote}
-            partner={partner}
+            sender={user}
           />
         </Column>
       </PageContainer>

@@ -38,28 +38,6 @@ const LoanAdminPortal = ({
     );
   };
 
-  const handleDeleteLoan = async (id: string) => {
-    const res = await fetch(`/api/loans/${id}`, {
-      method: "DELETE",
-    });
-
-    if (res.ok) {
-      setFilteredLoans(filteredLoans.filter((loan) => loan.id !== id));
-      alert("Loan deleted successfully");
-    }
-  };
-
-  const handleDeletePartner = async (id: string) => {
-    const res = await fetch(`/api/partners/${id}`, {
-      method: "DELETE",
-    });
-
-    if (res.ok) {
-      setFilteredLoans(filteredLoans.filter((partner) => partner.id !== id));
-      alert("Partner deleted successfully");
-    }
-  };
-
   return (
     <PageContainer>
       <Column col={12}>

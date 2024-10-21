@@ -15,7 +15,7 @@ export const getServerSideProps = async (context) => {
   const { id } = context.params;
 
   const loan = await prisma.loan.findUnique({
-    where: { id: id },
+    where: { id: Number(id) },
     include: {
       address: true,
     },
@@ -33,7 +33,7 @@ export const getServerSideProps = async (context) => {
     },
   });
   const notes = await prisma.note.findMany({
-    where: { loanId: id },
+    where: { loanId: Number(id) },
     orderBy: { createdAt: "desc" },
     include: {
       sender: {
@@ -289,16 +289,15 @@ const LoanPage = ({
     { id: 3, description: "Loan approved", date: new Date() },
   ]);
 
+  const [accessCode, setAccessCode] = useState("");
   useEffect(() => {
     const accessCodeQueryParam = new URLSearchParams(
       window.location.search
     ).get("access_code");
     if (accessCodeQueryParam) {
       setAccessCode(accessCodeQueryParam);
-      handleVerifyAccessCode();
     }
   }, []);
-  const [accessCode, setAccessCode] = useState("");
   const [isAccessCodeValid, setIsAccessCodeValid] = useState(false);
 
   const handleVerifyAccessCode = () => {

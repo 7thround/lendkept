@@ -1,7 +1,9 @@
 import { useState } from "react";
 import prisma from "../../lib/prisma";
-import { Company, Partner } from "@prisma/client";
+import { Company, User } from "@prisma/client";
 import InputMask from "react-input-mask";
+import cookie from "cookie";
+import { getUser } from "..";
 
 function formatLoanPayload(payload) {
   return {
@@ -18,10 +20,17 @@ function formatLoanPayload(payload) {
     status: "POSSIBLE_LOAN",
     paid: false,
     companyId: "",
+    loanAdminId: "",
   };
 }
 
 export const getServerSideProps = async (context) => {
+  const { req } = context;
+  const cookies = req.headers.cookie;
+  const parsedCookies = cookie.parse(cookies || "");
+  const token = parsedCookies.token;
+  const user = await getUser(token);
+
   const { params } = context;
   const { company: companySlug } = params;
   try {
@@ -36,7 +45,7 @@ export const getServerSideProps = async (context) => {
     }
 
     return {
-      props: { company },
+      props: { company, user },
     };
   } catch (error) {
     console.error("Error verifying the user:", error);
@@ -52,9 +61,10 @@ export const getServerSideProps = async (context) => {
 
 interface Props {
   company: Company;
+  user: User;
 }
 
-const MortgageApplicationForm = ({ company }: Props) => {
+const MortgageApplicationForm = ({ company, user }: Props) => {
   const { primaryColor } = company;
   const [formData, setFormData] = useState({
     loanType: "HOME_PURCHASE",
@@ -74,6 +84,7 @@ const MortgageApplicationForm = ({ company }: Props) => {
     monthlyDebt: "",
     dob: "",
     ssn: "",
+    loanAdminId: "",
   });
   const [loanSubmitted, setLoanSubmitted] = useState(false);
 
@@ -93,6 +104,10 @@ const MortgageApplicationForm = ({ company }: Props) => {
 
     // Add partner and company IDs to the payload
     loanPayload.companyId = company.id;
+
+    if (user.role === "LOAN_ADMIN") {
+      loanPayload.loanAdminId = user.id;
+    }
 
     const response = await fetch("/api/loans", {
       method: "POST",
@@ -122,6 +137,7 @@ const MortgageApplicationForm = ({ company }: Props) => {
         monthlyDebt: "",
         dob: "",
         ssn: "",
+        loanAdminId: "",
       });
       setLoanSubmitted(true);
     } else {

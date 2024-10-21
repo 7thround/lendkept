@@ -33,6 +33,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       let newUser: User;
 
       if (role === "PARTNER") {
+        const address = await prisma.address.create({
+          data: {
+            addressLine1,
+            addressLine2,
+            city,
+            state,
+            zip,
+          },
+        });
         const newPartner = await prisma.partner.create({
           data: {
             name,
@@ -40,11 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             phone,
             referralCode: referralCode || generateReferralCode(),
             companyId,
-            addressLine1,
-            addressLine2,
-            city,
-            state,
-            zip,
+            addressId: address.id,
           },
         });
 
@@ -57,16 +62,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           },
         });
       } else if (role === "COMPANY") {
-        const newCompany = await prisma.company.create({
+        const address = await prisma.address.create({
           data: {
-            name,
-            phone,
-            logo,
             addressLine1,
             addressLine2,
             city,
             state,
             zip,
+          },
+        });
+        const newCompany = await prisma.company.create({
+          data: {
+            name,
+            phone,
+            logo,
+            addressId: address.id,
           },
         });
 

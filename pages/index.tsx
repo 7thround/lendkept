@@ -151,6 +151,7 @@ export const getServerSideProps: GetServerSideProps = async (
           company,
           loans,
           user,
+          role,
         },
       };
     }
@@ -250,10 +251,8 @@ const Home: React.FC<Props> = ({
         />
       ) : (
         <CompanyPortal
-          loans={loans}
           partners={partners}
           company={company}
-          user={user}
           loanAdmins={loanAdmins}
         />
       )}

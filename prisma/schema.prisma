@@ -44,7 +44,7 @@ model Note {
   id        String   @default(uuid()) @id
   text      String
   loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
-  loanId    String
+  loanId    Int
   sender    User     @relation(fields: [senderId], references: [id])
   senderId  String
   createdAt DateTime @default(now())
@@ -72,7 +72,7 @@ enum Role {
 }
 
 model Loan {
-  id           String     @default(uuid()) @id
+  id           Int       @default(autoincrement()) @id
   clientName   String
   clientPhone  String
   clientEmail  String

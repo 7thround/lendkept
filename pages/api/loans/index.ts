@@ -1,6 +1,7 @@
 // src/pages/api/loans/index.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
+import { LoanStatus } from "@prisma/client";
 
 export default async function handler(
   req: NextApiRequest,
@@ -18,10 +19,35 @@ export default async function handler(
 }
 
 async function getLoans(req: NextApiRequest, res: NextApiResponse) {
-  const loans = await prisma.loan.findMany();
-  res.status(200).json(loans);
-}
+  try {
+    const { search = '', status, referredBy, sortColumn, sortDirection } = req.query;
 
+    const loans = await prisma.loan.findMany({
+      where: {
+        address: {
+          addressLine1: {
+            contains: Array.isArray(search) ? search[0] : search,
+          },
+        },
+        status: status ? LoanStatus[Array.isArray(status) ? status[0] : status] : undefined,
+        partner: {
+          name: referredBy ? { contains: Array.isArray(referredBy) ? referredBy[0] : referredBy } : undefined,
+        },
+      },
+      orderBy: sortColumn
+        ? { [Array.isArray(sortColumn) ? sortColumn[0] : sortColumn]: sortDirection === 'desc' ? 'desc' : 'asc' }
+        : undefined,
+      include: {
+        address: true,
+        partner: true,
+      },
+    });
+
+    res.status(200).json(loans);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch loans' });
+  }
+}
 async function createLoan(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).end(`Method ${req.method} Not Allowed`);
@@ -42,6 +68,7 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
     partnerId,
     companyId,
     paid = false, // Default value
+    loanAdminId
   } = req.body;
 
   try {
@@ -71,6 +98,7 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
         partnerId,
         companyId,
         accessCode,
+        loanAdminId,
       },
     });
 
