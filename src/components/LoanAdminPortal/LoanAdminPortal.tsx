@@ -3,128 +3,17 @@ import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
 import { Company, Partner, User } from "@prisma/client";
-import { DEFAULT_PASSWORD, LoanStatusLabels } from "../../constants";
+import { LoanStatusLabels } from "../../constants";
 import { LoanWithAddress } from "../../../types";
-import axios from "axios";
 
-const LoanAdminsPanel = ({ company, loanAdmins }) => {
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-
-  const handleCreateUser = async () => {
-    try {
-      const response = await axios.post("/api/users", {
-        name: userName,
-        email: userEmail,
-        password: DEFAULT_PASSWORD,
-        role: "LOAN_ADMIN",
-        companyId: company.id,
-      });
-
-      if (response.status === 201) {
-        console.log("User created successfully:", response.data);
-        alert("User created successfully");
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error("Error creating user:", error);
-    } finally {
-      setModalOpen(false);
-    }
-  };
-
-  const handleDeleteUser = async (id: string) => {
-    try {
-      const response = await axios.delete(`/api/users/${id}`);
-
-      if (response.status === 204) {
-        console.log("User deleted successfully:", response.data);
-        alert("User deleted successfully");
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    }
-  };
-
-  return (
-    <div className="bg-white shadow rounded-lg mt-4">
-      <div className="flex items-center justify-between mb-2 pt-2 px-4">
-        <h2 className="text-xl font-semibold text-gray-900">Loan Admins</h2>
-        <button
-          className="bg-[#e74949] text-white my-1 py-1 px-3 rounded-lg text-sm"
-          onClick={() => setModalOpen(true)}
-        >
-          New Admin
-        </button>
-      </div>
-      <ul className="divide-y divide-gray-200 px-4">
-        {loanAdmins.map((admin) => (
-          <li key={admin.id} className="py-2 flex justify-between items-center">
-            <span>{admin.name}</span>
-            <div>
-              <button
-                className="text-[#e74949] hover:text-blue-900"
-                onClick={() => handleDeleteUser(admin.id)}
-              >
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Create New Admin</h3>
-            <input
-              type="text"
-              placeholder="Name"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              className="border mb-2 p-2 w-full"
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={userEmail}
-              onChange={(e) => setUserEmail(e.target.value)}
-              className="border mb-4 p-2 w-full"
-            />
-            <div className="flex justify-end">
-              <button
-                className="bg-gray-300 text-black py-1 px-3 rounded-lg mr-2"
-                onClick={() => setModalOpen(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="bg-[#e74949] text-white py-1 px-3 rounded-lg"
-                onClick={handleCreateUser}
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-const CompanyPortal = ({
+const LoanAdminPortal = ({
   loans,
-  partners,
   company,
   user,
-  loanAdmins,
 }: {
   loans: LoanWithAddress[];
-  partners: Partner[];
   company: Company;
   user: User;
-  loanAdmins: User[];
 }) => {
   const router = useRouter();
 
@@ -173,7 +62,7 @@ const CompanyPortal = ({
 
   return (
     <PageContainer>
-      <Column col={8}>
+      <Column col={12}>
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg pt-2 overflow-hidden flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4">
@@ -246,9 +135,6 @@ const CompanyPortal = ({
                           >
                             <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
                           </button>
-                          <button onClick={() => handleDeleteLoan(loan.id)}>
-                            <TrashIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -273,71 +159,6 @@ const CompanyPortal = ({
             </table>
           </div>
         </div>
-      </Column>
-      <Column col={4}>
-        {/* Referred Partners Panel */}
-        <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col flex-grow">
-          <div className="flex items-center justify-between mb-2 px-4 pt-2">
-            <h2 className="text-xl font-semibold text-gray-900">Partners</h2>
-            <button
-              className="bg-[#e74949] text-white my-1 py-1 px-3 rounded-lg text-sm"
-              onClick={() => router.push(`${company.slug}/register`)}
-            >
-              New Partner
-            </button>
-          </div>
-          <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  {/* <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th> */}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {partners.length ? (
-                  partners.map((partner) => (
-                    <tr key={partner.id}>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {partner.name}
-                      </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
-                        {partner.email.toLocaleLowerCase()}
-                      </td>
-                      {/* <td className="text-center py-2 px-4 whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleDeletePartner(partner.id)}
-                          >
-                            <TrashIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                          </button>
-                        </div>
-                      </td> */}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      className="py-2 px-4 whitespace-nowrap text-center"
-                      colSpan={2}
-                    >
-                      <div>No referred partners yet</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {/* Loan Admins Panel */}
-        <LoanAdminsPanel company={company} loanAdmins={loanAdmins} />
       </Column>
       {/* Message Center Panel */}
       <Column col={12}>
@@ -385,4 +206,4 @@ const CompanyPortal = ({
   );
 };
 
-export default CompanyPortal;
+export default LoanAdminPortal;

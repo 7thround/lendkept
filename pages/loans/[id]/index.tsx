@@ -1,13 +1,20 @@
-import { PencilSquareIcon } from "@heroicons/react/20/solid";
+import {
+  EnvelopeIcon,
+  InboxIcon,
+  PencilSquareIcon,
+} from "@heroicons/react/20/solid";
 import React, { useState } from "react";
-import { Column, PageContainer } from "../../src/components/Layout/PageParts";
-import prisma from "../../lib/prisma";
-import { formatDateWithTime } from "../../src/utils";
+import {
+  Column,
+  PageContainer,
+} from "../../../src/components/Layout/PageParts";
+import prisma from "../../../lib/prisma";
+import { formatDateWithTime } from "../../../src/utils";
 import { Company, Loan, Note, Partner, User } from "@prisma/client";
-import { LoanStatusLabels } from "../../src/constants";
-import { getUser } from "..";
+import { LoanStatusLabels } from "../../../src/constants";
+import { getUser } from "../..";
 import cookie from "cookie";
-import { LoanWithAddress } from "../../types";
+import { LoanWithAddress } from "../../../types";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
@@ -27,6 +34,7 @@ export const getServerSideProps = async (context) => {
     select: {
       name: true,
       id: true,
+      email: true,
     },
   });
   const notes = await prisma.note.findMany({
@@ -98,19 +106,10 @@ const LoanAdminsPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
       console.error("Failed to update loan");
     }
   };
-  console.log("Selected Admin:", selectedAdmin);
+
   return (
-    <div className="p-4 bg-white shadow rounded-lg mb-4">
-      <h3 className="text-lg font-semibold mb-2">Assign Admin</h3>
-      <label htmlFor="loan-admin" className="sr-only">
-        Loan Admin
-      </label>
-      <div className="flex items-center space-x-4 mb-2">
-        <span className="text-gray-600">Loan Admin:</span>
-        <span className="text-[#e74949] font-semibold">
-          {selectedAdmin?.name || "None"}
-        </span>
-      </div>
+    <div className="p-4 bg-white shadow rounded-lg">
+      <h3 className="text-lg font-semibold mb-1">Assigned Admin</h3>
       <select
         onChange={handleChange}
         className="p-2 border rounded w-full"
@@ -277,7 +276,7 @@ const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
 
   return (
     <div className="bg-white shadow rounded-lg pt-2 p-4">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">Notes</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-2">Notes</h2>
       <ul className="space-y-4">
         {notes?.map((note, index) => (
           <li
@@ -465,12 +464,14 @@ const LoanPage = ({
     { id: 3, description: "Loan approved", date: new Date() },
   ]);
 
+  const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/loans/${loan.id}?access_code=${loan.accessCode}`;
+
   return (
     <>
       <PageContainer>
         <Column col={8}>
           <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
-            <h1 className="text-xl font-semibold text-gray-900 mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 mb-4">
               Loan Details
             </h1>
             <div className="text-center font-semibold pb-2">Loan Timeline</div>
@@ -570,19 +571,46 @@ const LoanPage = ({
             />
           )}
           {/* Loan Admins Panel */}
-          <LoanAdminsPanel
-            availableLoanAdmins={availableLoanAdmins}
-            selectedAdmin={
-              availableLoanAdmins.filter(
-                (admin) => admin.id === loan.loanAdminId
-              )[0]
-            }
-            loan={loan}
-          />
+          {user.role === "COMPANY" && (
+            <LoanAdminsPanel
+              availableLoanAdmins={availableLoanAdmins}
+              selectedAdmin={
+                availableLoanAdmins.filter(
+                  (admin) => admin.id === loan.loanAdminId
+                )[0]
+              }
+              loan={loan}
+            />
+          )}
+          {/* Copy Loan Link */}
+          <div className="bg-white shadow rounded-lg pt-2 p-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-2 pb-2">
+              Shareable Link
+            </h2>
+            <div className="flex items-center space-x-2">
+              <input
+                type="text"
+                className="p-2 border rounded w-full"
+                value={loanLink}
+              />
+              <button
+                className="p-2 bg-[#e74949] text-white rounded"
+                onClick={(e) => {
+                  navigator.clipboard.writeText(loanLink);
+                  (e.target as HTMLButtonElement).textContent = "Copied!";
+                  setTimeout(() => {
+                    (e.target as HTMLButtonElement).textContent = "Copy";
+                  }, 2000);
+                }}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
           {/* Activity Log */}
           <div className="bg-white shadow rounded-lg pt-2 p-4">
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2 pb-2">
+              <h2 className="text-lg font-semibold text-gray-900 mb-2 pb-2">
                 Activity Log
               </h2>
               <ul className="space-y-2">
@@ -619,7 +647,7 @@ const LoanPage = ({
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-semibold mb-4">Edit {editSection}</h2>
+            <h2 className="text-lg font-semibold mb-4">Edit {editSection}</h2>
             <div className="space-y-4">
               {editSection === "client" && (
                 <>

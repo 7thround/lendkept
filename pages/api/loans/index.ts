@@ -57,6 +57,7 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
     if (!address) {
       return res.status(400).json({ error: "Invalid Address" });
     }
+    const accessCode = String(Math.floor(100000 + Math.random() * 900000));
     const newLoan = await prisma.loan.create({
       data: {
         clientName,
@@ -69,6 +70,7 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
         paid,
         partnerId,
         companyId,
+        accessCode,
       },
     });
 

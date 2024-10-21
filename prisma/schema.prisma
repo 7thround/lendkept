@@ -89,6 +89,7 @@ model Loan {
   notes        Note[]
   loanAdmin    User?      @relation("LoanAdmin", fields: [loanAdminId], references: [id])
   loanAdminId  String?
+  accessCode   String     @unique
 }
 
 model Address {
