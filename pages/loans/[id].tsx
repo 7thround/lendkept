@@ -7,10 +7,28 @@ import { Company, Loan, Note, Partner, User } from "@prisma/client";
 import { LoanStatusLabels } from "../../src/constants";
 import { getUser } from "..";
 import cookie from "cookie";
+import { LoanWithAddress } from "../../types";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
-  const loan = await prisma.loan.findUnique({ where: { id } });
+
+  const loan = await prisma.loan.findUnique({
+    where: { id: id },
+    include: {
+      address: true,
+    },
+  });
+
+  const availableLoanAdmins = await prisma.user.findMany({
+    where: {
+      companyId: loan.companyId,
+      role: "LOAN_ADMIN",
+    },
+    select: {
+      name: true,
+      id: true,
+    },
+  });
   const notes = await prisma.note.findMany({
     where: { loanId: id },
     orderBy: { createdAt: "desc" },
@@ -29,9 +47,12 @@ export const getServerSideProps = async (context) => {
     createdAt: note.createdAt.toISOString(),
   }));
 
-  const partner = await prisma.partner.findUnique({
-    where: { id: loan.partnerId },
-  });
+  let partner = null;
+  if (loan.partnerId) {
+    partner = await prisma.partner.findUnique({
+      where: { id: loan.partnerId },
+    });
+  }
   const company = await prisma.company.findUnique({
     where: { id: loan.companyId },
   });
@@ -48,8 +69,66 @@ export const getServerSideProps = async (context) => {
       partner,
       company,
       user: await getUser(token),
+      availableLoanAdmins,
     },
   };
+};
+
+const LoanAdminsPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
+  const handleChange = async (e) => {
+    const loanAdminId = e.target.value;
+    const payload = {
+      ...loan,
+      loanAdminId,
+    };
+    console.log("Payload:", payload);
+    const response = await fetch(`/api/loans/${loan.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const updatedLoan = await response.json();
+      console.log("Loan updated:", updatedLoan);
+      window.location.reload();
+    } else {
+      console.error("Failed to update loan");
+    }
+  };
+  console.log("Selected Admin:", selectedAdmin);
+  return (
+    <div className="p-4 bg-white shadow rounded-lg mb-4">
+      <h3 className="text-lg font-semibold mb-2">Assign Admin</h3>
+      <label htmlFor="loan-admin" className="sr-only">
+        Loan Admin
+      </label>
+      <div className="flex items-center space-x-4 mb-2">
+        <span className="text-gray-600">Loan Admin:</span>
+        <span className="text-[#e74949] font-semibold">
+          {selectedAdmin?.name || "None"}
+        </span>
+      </div>
+      <select
+        onChange={handleChange}
+        className="p-2 border rounded w-full"
+        value={selectedAdmin?.id}
+      >
+        <option value="">Select Loan Admin</option>
+        {availableLoanAdmins.map((admin) => (
+          <option
+            key={admin.id}
+            value={admin.id}
+            selected={selectedAdmin?.id === admin.id}
+          >
+            {admin.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 };
 
 const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
@@ -195,7 +274,7 @@ const NotesSection = ({ notes, loanId, onAddNote, partner }) => {
       setNewNote("");
     }
   };
-  console.log(notes);
+
   return (
     <div className="bg-white shadow rounded-lg pt-2 p-4">
       <h2 className="text-xl font-semibold text-gray-900 mb-2">Notes</h2>
@@ -240,12 +319,14 @@ const LoanPage = ({
   partner,
   company,
   user,
+  availableLoanAdmins,
 }: {
-  loan: Loan;
+  loan: LoanWithAddress;
   notes: Note[];
   partner: Partner;
   company: Company;
   user: User;
+  availableLoanAdmins: User[];
 }) => {
   const addNote = async (note) => {
     const response = await fetch(`/api/notes`, {
@@ -335,11 +416,11 @@ const LoanPage = ({
       clientName: loan.clientName,
       clientPhone: loan.clientPhone,
       clientEmail: loan.clientEmail,
-      addressLine1: loan.addressLine1,
-      addressLine2: loan.addressLine2,
-      city: loan.city,
-      state: loan.state,
-      zip: loan.zip,
+      addressLine1: loan.address.addressLine1,
+      addressLine2: loan.address.addressLine2,
+      city: loan.address.city,
+      state: loan.address.state,
+      zip: loan.address.zip,
       loanType: loan.loanType,
       loanAmount: loan.loanAmount,
       status: loan.status,
@@ -358,7 +439,10 @@ const LoanPage = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          addressId: loan.addressId,
+          ...formData,
+        }),
       });
 
       if (response.ok) {
@@ -423,19 +507,19 @@ const LoanPage = ({
                   </button>
                 </h2>
                 <p>
-                  <strong>Line 1:</strong> {loan.addressLine1}
+                  <strong>Line 1:</strong> {loan.address.addressLine1}
                 </p>
                 <p>
-                  <strong>Line 2:</strong> {loan.addressLine2}
+                  <strong>Line 2:</strong> {loan.address.addressLine2}
                 </p>
                 <p>
-                  <strong>City:</strong> {loan.city}
+                  <strong>City:</strong> {loan.address.city}
                 </p>
                 <p>
-                  <strong>State:</strong> {loan.state}
+                  <strong>State:</strong> {loan.address.state}
                 </p>
                 <p>
-                  <strong>ZIP:</strong> {loan.zip}
+                  <strong>ZIP:</strong> {loan.address.zip}
                 </p>
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
@@ -465,9 +549,11 @@ const LoanPage = ({
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
                   Partner & Company
                 </h2>
-                <p>
-                  <strong>Affiliate Partner:</strong> {partner.name}
-                </p>
+                {partner && (
+                  <p>
+                    <strong>Affiliate Partner:</strong> {partner.name}
+                  </p>
+                )}
                 <p>
                   <strong>Company</strong> {company.name}
                 </p>
@@ -483,6 +569,16 @@ const LoanPage = ({
               updateStatus={updateStatus}
             />
           )}
+          {/* Loan Admins Panel */}
+          <LoanAdminsPanel
+            availableLoanAdmins={availableLoanAdmins}
+            selectedAdmin={
+              availableLoanAdmins.filter(
+                (admin) => admin.id === loan.loanAdminId
+              )[0]
+            }
+            loan={loan}
+          />
           {/* Activity Log */}
           <div className="bg-white shadow rounded-lg pt-2 p-4">
             <div>

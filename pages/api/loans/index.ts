@@ -45,16 +45,24 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
   } = req.body;
 
   try {
-    const newLoan = await prisma.loan.create({
+    const address = await prisma.address.create({
       data: {
-        clientName,
-        clientPhone,
-        clientEmail,
         addressLine1,
         addressLine2: addressLine2 || null,
         city,
         state,
         zip,
+      },
+    });
+    if (!address) {
+      return res.status(400).json({ error: "Invalid Address" });
+    }
+    const newLoan = await prisma.loan.create({
+      data: {
+        clientName,
+        clientPhone,
+        clientEmail,
+        addressId: address.id,
         loanType,
         loanAmount: parseFloat(loanAmount),
         status,

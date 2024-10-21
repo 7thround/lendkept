@@ -35,7 +35,7 @@ function App({ Component, pageProps, router }) {
       </header>
     );
     return (
-      <Layout header={WhiteLabelHeader} showBackButton={showBackButton}>
+      <Layout hideNav showBackButton={showBackButton}>
         <Component {...pageProps} />
       </Layout>
     );

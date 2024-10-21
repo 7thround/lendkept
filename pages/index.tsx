@@ -1,11 +1,12 @@
 import React from "react";
-import { Company, Loan, Partner, Role, User } from "@prisma/client";
+import { Company, Partner, Role, User } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import cookie from "cookie";
 import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
 import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
 import prisma from "../lib/prisma";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
+import { LoanWithAddress } from "../types";
 
 export const getUser = async (token) => {
   const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
@@ -82,6 +83,9 @@ export const getServerSideProps: GetServerSideProps = async (
         where: {
           partnerId: partnerData.id,
         },
+        include: {
+          address: true,
+        },
       });
 
       const referredLoans = await prisma.loan.findMany({
@@ -96,6 +100,7 @@ export const getServerSideProps: GetServerSideProps = async (
               name: true,
             },
           },
+          address: true,
         },
       });
 
@@ -125,6 +130,12 @@ export const getServerSideProps: GetServerSideProps = async (
           companyId: company.id,
         },
       });
+      const loanAdmins = await prisma.user.findMany({
+        where: {
+          companyId: company.id,
+          role: "LOAN_ADMIN",
+        },
+      });
 
       const loans = await prisma.loan.findMany({
         where: {
@@ -136,6 +147,7 @@ export const getServerSideProps: GetServerSideProps = async (
               name: true,
             },
           },
+          address: true,
         },
       });
 
@@ -145,6 +157,7 @@ export const getServerSideProps: GetServerSideProps = async (
           loans,
           partners,
           user,
+          loanAdmins,
         },
       };
     }
@@ -168,10 +181,11 @@ type Props = {
   role: Role;
   company: Company;
   partner?: Partner;
-  loans?: Loan[];
-  referredLoans?: Loan[];
+  loans?: LoanWithAddress[];
+  referredLoans?: LoanWithAddress[];
   partners?: Partner[];
   user: User;
+  loanAdmins?: User[];
 };
 
 const Home: React.FC<Props> = ({
@@ -182,6 +196,7 @@ const Home: React.FC<Props> = ({
   partners,
   referredLoans,
   user,
+  loanAdmins,
 }: Props) => {
   return (
     <>
@@ -199,6 +214,7 @@ const Home: React.FC<Props> = ({
           partners={partners}
           company={company}
           user={user}
+          loanAdmins={loanAdmins}
         />
       )}
     </>

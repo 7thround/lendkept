@@ -2,19 +2,130 @@ import { useState } from "react";
 import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
-import { Company, Loan, Partner, User } from "@prisma/client";
-import { LoanStatusLabels } from "../../constants";
+import { Company, Partner, User } from "@prisma/client";
+import { DEFAULT_PASSWORD, LoanStatusLabels } from "../../constants";
+import { LoanWithAddress } from "../../../types";
+import axios from "axios";
+import { pages } from "next/dist/build/templates/app-page";
 
+const LoanAdminsPanel = ({ company, loanAdmins }) => {
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+
+  const handleCreateUser = async () => {
+    try {
+      const response = await axios.post("/api/users", {
+        name: userName,
+        email: userEmail,
+        password: DEFAULT_PASSWORD,
+        role: "LOAN_ADMIN",
+        companyId: company.id,
+      });
+
+      if (response.status === 201) {
+        console.log("User created successfully:", response.data);
+        alert("User created successfully");
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error creating user:", error);
+    } finally {
+      setModalOpen(false);
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    try {
+      const response = await axios.delete(`/api/users/${id}`);
+
+      if (response.status === 204) {
+        console.log("User deleted successfully:", response.data);
+        alert("User deleted successfully");
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+    }
+  };
+
+  return (
+    <div className="bg-white shadow rounded-lg mt-4">
+      <div className="flex items-center justify-between mb-2 pt-2 px-4">
+        <h2 className="text-xl font-semibold text-gray-900">Loan Admins</h2>
+        <button
+          className="bg-[#e74949] text-white my-1 py-1 px-3 rounded-lg text-sm"
+          onClick={() => setModalOpen(true)}
+        >
+          New Admin
+        </button>
+      </div>
+      <ul className="divide-y divide-gray-200 px-4">
+        {loanAdmins.map((admin) => (
+          <li key={admin.id} className="py-2 flex justify-between items-center">
+            <span>{admin.name}</span>
+            <div>
+              <button
+                className="text-[#e74949] hover:text-blue-900"
+                onClick={() => handleDeleteUser(admin.id)}
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-lg font-semibold mb-4">Create New Admin</h3>
+            <input
+              type="text"
+              placeholder="Name"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="border mb-2 p-2 w-full"
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={userEmail}
+              onChange={(e) => setUserEmail(e.target.value)}
+              className="border mb-4 p-2 w-full"
+            />
+            <div className="flex justify-end">
+              <button
+                className="bg-gray-300 text-black py-1 px-3 rounded-lg mr-2"
+                onClick={() => setModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="bg-[#e74949] text-white py-1 px-3 rounded-lg"
+                onClick={handleCreateUser}
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 const CompanyPortal = ({
   loans,
   partners,
   company,
   user,
+  loanAdmins,
 }: {
-  loans: Loan[];
+  loans: LoanWithAddress[];
   partners: Partner[];
   company: Company;
   user: User;
+  loanAdmins: User[];
 }) => {
   const router = useRouter();
 
@@ -34,7 +145,7 @@ const CompanyPortal = ({
   const handleSearch = () => {
     setFilteredLoans(
       loans.filter((loan) =>
-        loan.addressLine1.toLowerCase().includes(search.toLowerCase())
+        loan.address.addressLine1.toLowerCase().includes(search.toLowerCase())
       )
     );
   };
@@ -117,7 +228,7 @@ const CompanyPortal = ({
                   filteredLoans.map((loan) => (
                     <tr key={loan.id}>
                       <td className="py-3 px-4 whitespace-nowrap">
-                        {loan.addressLine1}
+                        {loan.address.addressLine1}
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         ${loan.loanAmount.toLocaleString()}
@@ -226,6 +337,8 @@ const CompanyPortal = ({
             </table>
           </div>
         </div>
+        {/* Loan Admins Panel */}
+        <LoanAdminsPanel company={company} loanAdmins={loanAdmins} />
       </Column>
       {/* Message Center Panel */}
       <Column col={12}>

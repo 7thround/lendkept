@@ -1,6 +1,7 @@
 // src/pages/api/users/index.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
+import bcrypt from "bcrypt";
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,9 +24,10 @@ async function getUsers(req: NextApiRequest, res: NextApiResponse) {
 }
 
 async function createUser(req: NextApiRequest, res: NextApiResponse) {
-  const { email, password, role, companyId, partnerId } = req.body;
+  const { email, password, role, companyId, partnerId, name } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = await prisma.user.create({
-    data: { email, password, role, companyId, partnerId },
+    data: { email, password: hashedPassword, role, companyId, partnerId, name },
   });
   res.status(201).json(newUser);
 }

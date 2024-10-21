@@ -17,8 +17,7 @@ function formatLoanPayload(payload) {
     loanAmount: parseFloat(payload.loanAmount),
     status: "POSSIBLE_LOAN",
     paid: false,
-    partnerId: "partner_id_placeholder",
-    companyId: "company_id_placeholder",
+    companyId: "",
   };
 }
 
@@ -88,10 +87,6 @@ const MortgageApplicationForm = ({ company }: Props) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.creditConsent) {
-      alert("Please provide consent for credit check.");
-      return;
-    }
 
     // Format the payload
     const loanPayload = formatLoanPayload(formData);
@@ -365,16 +360,19 @@ const MortgageApplicationForm = ({ company }: Props) => {
       </div>
     </form>
   ) : (
-    <div className="text-center">
-      <h1 className="text-2xl font-bold mb-4 mt-12">Loan Submitted!</h1>
+    <div className="text-center flex flex-col gap-4 items-center">
+      <h1 className="text-2xl font-bold mb-4 mt-12">Loan Submitted</h1>
       <button
         onClick={() => setLoanSubmitted(false)}
         style={{ backgroundColor: primaryColor }}
-        className="px-6 py-2 text-white rounded mt-6"
+        className="px-6 py-2 text-white rounded"
       >
         Submit Another Application
       </button>
-      <button className="text-[#e74949] hover:text-blue-900 ml-4">
+      <button
+        className="text-[#e74949] hover:text-blue-900"
+        onClick={() => window.history.back()}
+      >
         Go Back to Home
       </button>
     </div>

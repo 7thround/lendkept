@@ -82,7 +82,6 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
     creditConsent: false,
     annualIncome: "",
     monthlyDebt: "",
-    dob: "",
     ssn: "",
   });
   const [loanSubmitted, setLoanSubmitted] = useState(false);
@@ -135,7 +134,6 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         creditConsent: false,
         annualIncome: "",
         monthlyDebt: "",
-        dob: "",
         ssn: "",
       });
       setLoanSubmitted(true);
@@ -379,7 +377,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-4">Credit Info</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="col-span-1">
+          <div className="col-span-2">
             <InputMask
               placeholder="SSN"
               name="ssn"
@@ -397,17 +395,6 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
               onFocus={(e) => {
                 e.target.type = "text";
               }}
-            />
-          </div>
-          <div className="col-span-1">
-            <input
-              placeholder="Date of Birth"
-              type="date"
-              name="dob"
-              value={formData.dob}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
             />
           </div>
         </div>
@@ -474,13 +461,6 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         Your mortgage application has been submitted successfully. We will
         review your application and get back to you soon.
       </p>
-      <button
-        onClick={() => setLoanSubmitted(false)}
-        style={{ backgroundColor: primaryColor }}
-        className="px-6 py-2 text-white rounded mt-6"
-      >
-        Back to Form
-      </button>
     </div>
   );
 };

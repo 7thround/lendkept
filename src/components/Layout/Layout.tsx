@@ -7,9 +7,11 @@ import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
 const Header = ({
   user,
   showBackButton,
+  hideNav,
 }: {
   user: User;
   showBackButton?: boolean;
+  hideNav?: boolean;
 }) => {
   return (
     <header className="bg-gray-900 text-white p-0">
@@ -34,10 +36,14 @@ const Header = ({
               Lend<span className="font-bold">KEPT</span>
             </h1>
           </a>
-          <div className="border-l border-white h-6" />
-          <a href="/classroom" className="text-white hover:text-gray-300">
-            Classroom
-          </a>
+          {!hideNav && (
+            <>
+              <div className="border-l border-white h-6" />
+              <a href="/classroom" className="text-white hover:text-gray-300">
+                Classroom
+              </a>
+            </>
+          )}
         </div>
         <div>
           {showBackButton && (
@@ -64,18 +70,18 @@ const Footer = () => (
 
 const Layout = ({
   children,
-  header,
   user,
   showBackButton = false,
+  hideNav = false,
 }: {
   children: React.ReactNode;
-  header?: React.ReactNode;
   user?: any;
   showBackButton?: boolean;
+  hideNav?: boolean;
 }) => {
   return (
     <div className="flex flex-col min-h-screen">
-      {header || <Header user={user} showBackButton={showBackButton} />}
+      <Header user={user} showBackButton={showBackButton} hideNav />
       <div className="flex-grow bg-gray-100 p-4">{children}</div>
       <Footer />
     </div>

@@ -10,3 +10,5 @@ export const LoanStatusLabels: { [key in keyof typeof LoanStatus]: string } = {
   CANCELLED: "Cancelled",
   NOT_QUALIFIED: "Not Qualified",
 };
+
+export const DEFAULT_PASSWORD = "password";

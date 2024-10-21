@@ -1,34 +1,28 @@
-// schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  url      = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model Partner {
-  id                  String   @default(uuid()) @id
-  name                String
-  email               String   @unique
-  phone               String
-  referralCode        String   @unique
-  referringPartner    Partner? @relation("Referrals", fields: [referringPartnerId], references: [id])
-  referringPartnerId  String? 
-  referredPartners    Partner[] @relation("Referrals")
-  company             Company  @relation(fields: [companyId], references: [id])
-  companyId           String
-  loans               Loan[]
-  notes               Note[]
-  user                User?
-  addressLine1        String
-  addressLine2        String?
-  city                String
-  state               String
-  zip                 String
+  id                 String   @default(uuid()) @id
+  name               String
+  email              String   @unique
+  phone              String
+  referralCode       String   @unique
+  referringPartner   Partner? @relation("Referrals", fields: [referringPartnerId], references: [id])
+  referringPartnerId String? 
+  referredPartners   Partner[] @relation("Referrals")
+  company            Company  @relation(fields: [companyId], references: [id])
+  companyId          String
+  loans              Loan[]
+  address            Address?  @relation(fields: [addressId], references: [id])
+  addressId          String?   @unique 
+  user               User?
 }
 
 model Company {
@@ -39,11 +33,8 @@ model Company {
   partners     Partner[]
   loans        Loan[]
   users        User[]
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  state        String
-  zip          String
+  address      Address?  @relation(fields: [addressId], references: [id])
+  addressId    String?   @unique
   slug         String   @unique @default(uuid())
   url          String?
   primaryColor String?
@@ -54,49 +45,62 @@ model Note {
   text      String
   loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
   loanId    String
-  sender    Partner? @relation(fields: [senderId], references: [id], onDelete: SetNull)
-  senderId  String?
+  sender    User     @relation(fields: [senderId], references: [id])
+  senderId  String
   createdAt DateTime @default(now())
 }
 
 model User {
   id        String   @default(uuid()) @id
+  name      String?  @default("User")
   email     String   @unique
   password  String
   role      Role     @default(PARTNER)
-  companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
-  partnerId String?  @unique
+  companyId String?
   partner   Partner? @relation(fields: [partnerId], references: [id])
-  name      String?
+  partnerId String?  @unique
+  notes     Note[]
+  loans     Loan[]   @relation("LoanAdmin")
 }
 
 enum Role {
   ADMIN
   COMPANY
   PARTNER
+  LOAN_ADMIN
 }
-
 
 model Loan {
   id           String     @default(uuid()) @id
   clientName   String
   clientPhone  String
   clientEmail  String
+  address      Address?   @relation(fields: [addressId], references: [id])
+  addressId    String?    @unique
+  loanType     LoanType
+  loanAmount   Float
+  status       LoanStatus
+  paid         Boolean    @default(false)
+  partner      Partner?   @relation(fields: [partnerId], references: [id])
+  partnerId    String?
+  company      Company    @relation(fields: [companyId], references: [id])
+  companyId    String
+  notes        Note[]
+  loanAdmin    User?      @relation("LoanAdmin", fields: [loanAdminId], references: [id])
+  loanAdminId  String?
+}
+
+model Address {
+  id           String  @default(uuid()) @id
   addressLine1 String
   addressLine2 String?
   city         String
   state        String
   zip          String
-  loanType     LoanType
-  loanAmount   Float
-  status       LoanStatus
-  paid         Boolean    @default(false)
-  partner      Partner    @relation(fields: [partnerId], references: [id])
-  partnerId    String
-  company      Company    @relation(fields: [companyId], references: [id])
-  companyId    String
-  notes        Note[]
+  partners     Partner[]
+  companies    Company[]
+  loans        Loan[]
 }
 
 enum LoanType {

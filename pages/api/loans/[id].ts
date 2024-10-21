@@ -51,7 +51,22 @@ async function updateLoan(
       paid,
       partnerId,
       companyId,
+      addressId,
+      loanAdminId,
     } = req.body;
+
+    const newAddress = {
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      zip,
+    };
+
+    await prisma.address.update({
+      where: { id: addressId },
+      data: newAddress,
+    });
 
     const updatedLoan = await prisma.loan.update({
       where: { id },
@@ -59,17 +74,13 @@ async function updateLoan(
         clientName,
         clientPhone,
         clientEmail,
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        zip,
         loanType,
         loanAmount,
         status,
         paid,
         partnerId,
         companyId,
+        loanAdminId
       },
     });
 
