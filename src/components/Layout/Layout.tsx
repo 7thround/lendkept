@@ -35,7 +35,7 @@ const Header = ({
             </h1>
           </a>
           {user && (
-            <>
+            <div className="hidden md:flex items-center gap-4">
               <div className="border-l border-white h-6" />
               <a href="/classroom" className="text-white hover:text-gray-300">
                 Classroom
@@ -43,7 +43,8 @@ const Header = ({
               <a href="/help" className="text-white hover:text-gray-300">
                 Help
               </a>
-            </>
+              {user && <LogoutButton />}
+            </div>
           )}
         </div>
         <div>
@@ -56,7 +57,9 @@ const Header = ({
               Back
             </button>
           )}
-          {user && !showBackButton && <LogoutButton />}
+          {user && !showBackButton && (
+            <span className="text-white">Welcome, {user.name}</span>
+          )}
         </div>
       </div>
     </header>
