@@ -37,9 +37,6 @@ async function updateLoan(
 ) {
   try {
     const {
-      clientName,
-      clientPhone,
-      clientEmail,
       addressLine1,
       addressLine2,
       city,
