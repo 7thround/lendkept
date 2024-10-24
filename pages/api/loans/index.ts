@@ -1,7 +1,7 @@
 // src/pages/api/loans/index.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
-import { LoanStatus } from "@prisma/client";
+import { CreditRating, LoanStatus } from "@prisma/client";
 
 export default async function handler(
   req: NextApiRequest,
@@ -54,55 +54,102 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const {
-    clientName,
-    clientPhone,
-    clientEmail,
+    // Borrower Information
+    borrowerFirstName,
+    borrowerLastName,
+    borrowerEmail,
+    borrowerPhone,
+    borrowerEmployer,
+    borrowerPosition,
+    borrowerIncome,
+    borrowerCredit,
+    // Co-Borrower Information
+    coBorrowerFirstName,
+    coBorrowerLastName,
+    coBorrowerEmail,
+    coBorrowerPhone,
+    coBorrowerEmployer,
+    coBorrowerPosition,
+    coBorrowerIncome,
+    coBorrowerCredit,
+    // Loan Information
+    loanType,
+    loanAmount,
+    // Address Information
     addressLine1,
-    addressLine2,
     city,
     state,
     zip,
-    loanType,
-    loanAmount,
-    status,
+    addressLine2,
+    downPayment,
+    // Financial Information
+    annualIncome,
+    monthlyDebt,
+    // Partner & Company Information
     partnerId,
     companyId,
-    paid = false, // Default value
-    loanAdminId
+    loanAdminId,
   } = req.body;
 
   try {
-    const address = await prisma.address.create({
-      data: {
-        addressLine1,
-        addressLine2: addressLine2 || null,
-        city,
-        state,
-        zip,
-      },
-    });
-    if (!address) {
-      return res.status(400).json({ error: "Invalid Address" });
-    }
-    const accessCode = String(Math.floor(100000 + Math.random() * 900000));
-    const newLoan = await prisma.loan.create({
-      data: {
-        clientName,
-        clientPhone,
-        clientEmail,
-        addressId: address.id,
-        loanType,
-        loanAmount: parseFloat(loanAmount),
-        status,
-        paid,
-        partnerId,
-        companyId,
-        accessCode,
-        loanAdminId,
-      },
-    });
+    const result = await prisma.$transaction(async (prisma) => {
+      const accessCode = String(Math.floor(100000 + Math.random() * 900000));
+      const status = LoanStatus.POSSIBLE_LOAN;
+      const address = await prisma.address.create({
+        data: {
+          addressLine1,
+          addressLine2: addressLine2 || null,
+          city,
+          state,
+          zip,
+        },
+      });
+      if (!address) {
+        return res.status(400).json({ error: "Invalid Address" });
+      }
+      const newLoan = await prisma.loan.create({
+        data: {
+          addressId: address.id,
+          loanType,
+          loanAmount: parseFloat(loanAmount),
+          status,
+          partnerId,
+          companyId,
+          accessCode,
+          loanAdminId,
+          downPayment: parseFloat(downPayment),
+          annualIncome: parseFloat(annualIncome),
+          monthlyDebt: parseFloat(monthlyDebt),
+          borrowers: {
+            create: {
+              firstName: borrowerFirstName,
+              lastName: borrowerLastName,
+              email: borrowerEmail,
+              phone: borrowerPhone,
+              employer: borrowerEmployer,
+              position: borrowerPosition,
+              income: parseFloat(borrowerIncome),
+              credit: borrowerCredit as CreditRating,
+            },
+            ...(coBorrowerFirstName && {
+              create: {
+                firstName: coBorrowerFirstName,
+                lastName: coBorrowerLastName,
+                email: coBorrowerEmail,
+                phone: coBorrowerPhone,
+                employer: coBorrowerEmployer,
+                position: coBorrowerPosition,
+                income: parseFloat(coBorrowerIncome),
+                credit: coBorrowerCredit as CreditRating,
+              },
+            }),
+          },
+        },
+      });
 
-    res.status(201).json(newLoan);
+      return newLoan;
+    });
+    res.status(201).json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

@@ -1,36 +1,9 @@
 import { useState } from "react";
 import prisma from "../../lib/prisma";
-import { Company, User } from "@prisma/client";
-import InputMask from "react-input-mask";
-import cookie from "cookie";
-import { getUser } from "..";
-
-function formatLoanPayload(payload) {
-  return {
-    clientName: payload.clientName,
-    clientPhone: payload.clientPhone,
-    clientEmail: payload.clientEmail,
-    addressLine1: payload.addressLine1,
-    addressLine2: payload.addressLine2 || null,
-    city: payload.city,
-    state: payload.state,
-    zip: payload.zip,
-    loanType: payload.loanType,
-    loanAmount: parseFloat(payload.loanAmount),
-    status: "POSSIBLE_LOAN",
-    paid: false,
-    companyId: "",
-    loanAdminId: "",
-  };
-}
+import { Company } from "@prisma/client";
+import LoanApplicationForm from "./LoanApplicationForm";
 
 export const getServerSideProps = async (context) => {
-  const { req } = context;
-  const cookies = req.headers.cookie;
-  const parsedCookies = cookie.parse(cookies || "");
-  const token = parsedCookies.token;
-  const user = await getUser(token);
-
   const { params } = context;
   const { company: companySlug } = params;
   try {
@@ -39,13 +12,11 @@ export const getServerSideProps = async (context) => {
     });
 
     if (!company) {
-      return {
-        notFound: true,
-      };
+      return { notFound: true };
     }
 
     return {
-      props: { company, user },
+      props: { company },
     };
   } catch (error) {
     console.error("Error verifying the user:", error);
@@ -61,33 +32,15 @@ export const getServerSideProps = async (context) => {
 
 interface Props {
   company: Company;
-  user: User;
 }
 
-const MortgageApplicationForm = ({ company, user }: Props) => {
+const MortgageApplicationForm = ({ company }: Props) => {
   const { primaryColor } = company;
   const [formData, setFormData] = useState({
     loanType: "HOME_PURCHASE",
-    downPayment: "",
-    foundHome: "",
-    clientName: "",
-    clientPhone: "",
-    clientEmail: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    zip: "",
-    loanAmount: "",
-    creditConsent: false,
-    annualIncome: "",
-    monthlyDebt: "",
-    dob: "",
-    ssn: "",
-    loanAdminId: "",
-  });
+  } as any);
   const [loanSubmitted, setLoanSubmitted] = useState(false);
-
+  console.log(formData);
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -98,299 +51,74 @@ const MortgageApplicationForm = ({ company, user }: Props) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Format the payload
-    const loanPayload = formatLoanPayload(formData);
-
-    // Add partner and company IDs to the payload
-    loanPayload.companyId = company.id;
-
-    if (user.role === "LOAN_ADMIN") {
-      loanPayload.loanAdminId = user.id;
+    if (!formData.creditConsent) {
+      alert("Please provide consent for credit check.");
+      return;
     }
+
+    // Add company id to the payload
+    formData.companyId = company.id;
 
     const response = await fetch("/api/loans", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(loanPayload),
+      body: JSON.stringify(formData),
     });
 
     if (response.ok) {
       alert("Mortgage application submitted successfully!");
-      setFormData({
-        loanType: "HOME_PURCHASE",
-        downPayment: "",
-        foundHome: "",
-        clientName: "",
-        clientPhone: "",
-        clientEmail: "",
-        addressLine1: "",
-        addressLine2: "",
-        city: "",
-        state: "",
-        zip: "",
-        loanAmount: "",
-        creditConsent: false,
-        annualIncome: "",
-        monthlyDebt: "",
-        dob: "",
-        ssn: "",
-        loanAdminId: "",
-      });
+      setFormData({});
       setLoanSubmitted(true);
     } else {
       alert("Failed to submit mortgage application.");
     }
   };
 
-  return !loanSubmitted ? (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-4 border-gray-500"
-      style={{ borderColor: primaryColor }}
-    >
-      {/* Applicant Info Section */}
-      <div>
-        <h1 className="text-xl font-semibold mb-4">Applicant Info</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
-            <input
-              placeholder="Full Name"
-              type="text"
-              name="clientName"
-              value={formData.clientName}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <InputMask
-              type="text"
-              name="clientPhone"
-              value={formData.clientPhone}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              mask="(999) 999-9999"
-              placeholder="Phone Number"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              placeholder="Email Address"
-              type="email"
-              name="clientEmail"
-              value={formData.clientEmail}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Loan Details Section */}
-      <div className="my-6">
-        <h2 className="text-lg font-semibold mb-4">Loan Details</h2>
-        <div className="text-sm grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <button
-            type="button"
-            onClick={() =>
-              setFormData({ ...formData, loanType: "HOME_PURCHASE" })
-            }
-            style={{
-              backgroundColor:
-                formData.loanType === "HOME_PURCHASE" ? primaryColor : "",
-              color: formData.loanType === "HOME_PURCHASE" ? "white" : "",
-            }}
-            className="p-2 border rounded"
+  return loanSubmitted ? (
+    <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-4 border-gray-500">
+      <h1 className="text-2xl font-bold mb-4 text-center">Loan Application</h1>
+      {/* Company Info Section */}
+      <div className="mb-6">
+        <p className="text-sm text-gray-600 text-center">
+          You are applying for a mortgage with{" "}
+          <a
+            href={company.url}
+            className="font-bold text-black"
+            style={{ color: primaryColor }}
           >
-            New Purchase
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, loanType: "REFINANCE" })}
-            style={{
-              backgroundColor:
-                formData.loanType === "REFINANCE" ? primaryColor : "",
-              color: formData.loanType === "REFINANCE" ? "white" : "",
-            }}
-            className="p-2 border rounded"
-          >
-            Refinance
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFormData({ ...formData, loanType: "EQUITY" })}
-            style={{
-              backgroundColor:
-                formData.loanType === "EQUITY" ? primaryColor : "",
-              color: formData.loanType === "EQUITY" ? "white" : "",
-            }}
-            className="p-2 border rounded"
-          >
-            Equity
-          </button>
-        </div>
+            {company.name}
+          </a>
+          .
+        </p>
       </div>
-
-      {/* Address Section */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Property Address</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="col-span-1">
-            <input
-              placeholder="Address Line 1"
-              type="text"
-              name="addressLine1"
-              value={formData.addressLine1}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              placeholder="Address Line 2"
-              type="text"
-              name="addressLine2"
-              value={formData.addressLine2}
-              onChange={handleChange}
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              placeholder="City"
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              placeholder="State"
-              type="text"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              placeholder="ZIP Code"
-              type="text"
-              name="zip"
-              value={formData.zip}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Finances Section */}
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-4">Finances</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div className="col-span-1">
-            <input
-              type="number"
-              name="loanAmount"
-              value={formData.loanAmount}
-              onChange={handleChange}
-              required
-              placeholder="Loan Amount"
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              autoComplete="off"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              type="number"
-              name="downPayment"
-              value={formData.downPayment}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              autoComplete="off"
-              placeholder="Down Payment"
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="col-span-1">
-            <input
-              placeholder="Annual Income"
-              type="number"
-              name="annualIncome"
-              value={formData.annualIncome}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              autoComplete="off"
-            />
-          </div>
-
-          <div className="col-span-1">
-            <input
-              placeholder="Monthly Debt"
-              type="number"
-              name="monthlyDebt"
-              value={formData.monthlyDebt}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full p-2 border border-gray-300 rounded"
-              autoComplete="off"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      <div className="mt-6 text-center">
-        <button
-          type="submit"
-          style={{ backgroundColor: primaryColor }}
-          className="px-6 py-2 text-white rounded w-full md:w-auto"
-        >
-          Submit Loan
-        </button>
-      </div>
-    </form>
+      <div className="border-t border-gray-300 my-6"></div>
+      <LoanApplicationForm
+        primaryColor={primaryColor}
+        formData={formData}
+        handleSubmit={handleSubmit}
+        setFormData={setFormData}
+        handleChange={handleChange}
+      />
+    </div>
   ) : (
-    <div className="text-center flex flex-col gap-4 items-center">
-      <h1 className="text-2xl font-bold mb-4 mt-12">Loan Submitted</h1>
+    <div className="text-center flex flex-col gap-2 items-center">
+      <h1 className="text-2xl font-bold mb-2 mt-12">
+        The loan has been submitted successfully!
+      </h1>
       <button
         onClick={() => setLoanSubmitted(false)}
-        style={{ backgroundColor: primaryColor }}
-        className="px-6 py-2 text-white rounded"
+        className="bg-gray-800 text-white px-4 py-2 rounded hover:bg-gray-700"
       >
-        Submit Another Application
+        Submit Another Loan
       </button>
-      <button
-        className="text-[#e74949] hover:text-blue-900"
-        onClick={() => window.history.back()}
+      <a
+        href={`/`}
+        className="border border-gray-800 px-4 py-2 rounded text-gray-800"
       >
-        Go Back to Home
-      </button>
+        Back Home
+      </a>
     </div>
   );
 };

@@ -41,18 +41,20 @@ model Company {
 }
 
 model Note {
-  id        String   @default(uuid()) @id
-  text      String
-  loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
-  loanId    Int
-  sender    User     @relation(fields: [senderId], references: [id])
-  senderId  String
-  createdAt DateTime @default(now())
+  id         String    @default(uuid()) @id
+  text       String
+  loan       Loan?     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  loanId     Int?
+  sender     User      @relation(fields: [senderId], references: [id])
+  senderId   String
+  createdAt  DateTime  @default(now())
+  borrower   Borrower? @relation(fields: [borrowerId], references: [id])
+  borrowerId String?
 }
 
 model User {
   id        String   @default(uuid()) @id
-  name      String?  @default("User")
+  name      String  @default("User")
   email     String   @unique
   password  String
   role      Role     @default(PARTNER)
@@ -73,23 +75,45 @@ enum Role {
 
 model Loan {
   id           Int       @default(autoincrement()) @id
-  clientName   String
-  clientPhone  String
-  clientEmail  String
-  address      Address?   @relation(fields: [addressId], references: [id])
-  addressId    String?    @unique
   loanType     LoanType
   loanAmount   Float
   status       LoanStatus
   paid         Boolean    @default(false)
-  partner      Partner?   @relation(fields: [partnerId], references: [id])
-  partnerId    String?
   company      Company    @relation(fields: [companyId], references: [id])
   companyId    String
-  notes        Note[]
+  accessCode   String     @unique
+  address      Address?   @relation(fields: [addressId], references: [id])
+  addressId    String?    @unique
+  partner      Partner?   @relation(fields: [partnerId], references: [id])
+  partnerId    String?
   loanAdmin    User?      @relation("LoanAdmin", fields: [loanAdminId], references: [id])
   loanAdminId  String?
-  accessCode   String     @unique
+  downPayment  Float?
+  annualIncome Float?
+  monthlyDebt  Float?
+  notes        Note[]
+  borrowers    Borrower[]
+}
+
+model Borrower {
+  id        String  @default(uuid()) @id
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  employer  String?
+  position  String?
+  income    Float?
+  credit    CreditRating?
+  loans     Loan[]
+  notes     Note[]
+}
+
+enum CreditRating {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
 }
 
 model Address {
