@@ -7,15 +7,17 @@ const LoanApplicationForm = ({
   setFormData,
   handleSubmit,
   handleChange,
+  includeCoBorrower,
+  setIncludeCoBorrower,
 }: {
   primaryColor: string;
   formData: any;
   setFormData: any;
   handleSubmit: (e: any) => void;
   handleChange: (e: any) => void;
+  includeCoBorrower: boolean;
+  setIncludeCoBorrower: (value: boolean) => void;
 }) => {
-  const [includeCoBorrower, setIncludeCoBorrower] = useState(false);
-
   return (
     <form onSubmit={handleSubmit} className="">
       <div className="flex flex-col gap-6">

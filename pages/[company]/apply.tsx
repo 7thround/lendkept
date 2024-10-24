@@ -51,7 +51,8 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
     loanType: "HOME_PURCHASE",
   } as any);
   const [loanSubmitted, setLoanSubmitted] = useState(false);
-  console.log(formData);
+  const [includeCoBorrower, setIncludeCoBorrower] = useState(false);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -70,6 +71,9 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
     // Add partner and company IDs to the payload
     formData.partnerId = partner?.id || null;
     formData.companyId = company.id;
+
+    // Include co-borrower if applicable
+    formData.includeCoBorrower = includeCoBorrower || false;
 
     const response = await fetch("/api/loans", {
       method: "POST",
@@ -112,6 +116,8 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
         handleSubmit={handleSubmit}
         setFormData={setFormData}
         handleChange={handleChange}
+        includeCoBorrower={includeCoBorrower}
+        setIncludeCoBorrower={setIncludeCoBorrower}
       />
       {/* Referral Code Section */}
       {partner && (

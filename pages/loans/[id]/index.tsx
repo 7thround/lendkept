@@ -5,12 +5,14 @@ import {
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
 import prisma from "../../../lib/prisma";
-import { formatDateWithTime } from "../../../src/utils";
 import { Company, LoanType, Note, Partner, User } from "@prisma/client";
-import { LoanStatusLabels } from "../../../src/constants";
 import { getUser } from "../..";
 import cookie from "cookie";
 import { LoanWithAddress } from "../../../types";
+import LoanAdminPanel from "../../../src/components/LoanAdminPanel";
+import LoanTimeline from "../../../src/components/LoanTimeline";
+import NotesSection from "../../../src/components/NotesSection";
+import UpdateStatusPanel from "../../../src/components/UpdateStatusPanel";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
@@ -19,8 +21,17 @@ export const getServerSideProps = async (context) => {
     where: { id: Number(id) },
     include: {
       address: true,
+      borrowers: true,
     },
   });
+
+  const serializedLoan = {
+    ...loan,
+    borrowers: loan.borrowers.map((borrower) => ({
+      ...borrower,
+      createdAt: borrower.createdAt.toISOString(),
+    })),
+  };
 
   const availableLoanAdmins = await prisma.user.findMany({
     where: {
@@ -35,7 +46,7 @@ export const getServerSideProps = async (context) => {
   });
   const notes = await prisma.note.findMany({
     where: { loanId: Number(id) },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
     include: {
       sender: {
         select: {
@@ -77,7 +88,7 @@ export const getServerSideProps = async (context) => {
 
   return {
     props: {
-      loan,
+      loan: serializedLoan,
       notes: serializedNotes,
       partner,
       company,
@@ -85,236 +96,6 @@ export const getServerSideProps = async (context) => {
       availableLoanAdmins,
     },
   };
-};
-
-const LoanAdminsPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
-  const handleChange = async (e) => {
-    const loanAdminId = e.target.value;
-    const payload = {
-      ...loan,
-      loanAdminId,
-    };
-    console.log("Payload:", payload);
-    const response = await fetch(`/api/loans/${loan.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (response.ok) {
-      const updatedLoan = await response.json();
-      console.log("Loan updated:", updatedLoan);
-      window.location.reload();
-    } else {
-      console.error("Failed to update loan");
-    }
-  };
-
-  return (
-    <div className="mt-2">
-      <h3 className="font-semibold mb-1">Assigned Admin</h3>
-      <select
-        onChange={handleChange}
-        className="p-2 border rounded w-full"
-        value={selectedAdmin?.id}
-      >
-        <option value="">Select Loan Admin</option>
-        {availableLoanAdmins.map((admin) => (
-          <option
-            key={admin.id}
-            value={admin.id}
-            selected={selectedAdmin?.id === admin.id}
-          >
-            {admin.name}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-};
-
-const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleStatusChange = (e) => {
-    setSelectedStatus(e.target.value);
-  };
-
-  const handleUpdateClick = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmUpdate = () => {
-    updateStatus(selectedStatus);
-    setIsModalOpen(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalOpen(false);
-  };
-
-  return (
-    <div className="p-4 bg-white shadow rounded-lg">
-      <h3 className="text-lg font-semibold mb-2">Update Loan Status</h3>
-      <div className="flex items-center space-x-4">
-        <select
-          value={selectedStatus}
-          onChange={handleStatusChange}
-          className="p-2 border rounded w-full"
-        >
-          {Object.keys(LoanStatusLabels).map((status, index) => (
-            <option key={index} value={status}>
-              {LoanStatusLabels[status]}
-            </option>
-          ))}
-        </select>
-        <button
-          onClick={handleUpdateClick}
-          className="p-2 bg-[#e74949] text-white rounded"
-        >
-          Update
-        </button>
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-4 rounded shadow-lg">
-            <h4 className="text-lg font-semibold mb-4">
-              Confirm Status Update
-            </h4>
-            <p>
-              Are you sure you want to update the loan status to "
-              {LoanStatusLabels[selectedStatus]}"?
-            </p>
-            <div className="flex justify-end space-x-4 mt-4">
-              <button
-                onClick={handleCancel}
-                className="p-2 bg-gray-300 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmUpdate}
-                className="p-2 bg-[#e74949] text-white rounded"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const loanTimelineStatuses = Object.keys(LoanStatusLabels).slice(0, 5);
-const LoanTimeline = ({ currentStatus }) => {
-  const activeStatusColor = (status) =>
-    status === "LOAN_FUNDED" ? "bg-green-600" : "bg-[#e74949]";
-  const inactiveStatuses = ["ON_HOLD", "CANCELLED", "NOT_QUALIFIED"];
-  const isInactive = inactiveStatuses.includes(currentStatus);
-  if (isInactive) {
-    return (
-      <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border overflow-x-auto">
-        {loanTimelineStatuses.map((status, index) => (
-          <div key={index} className="flex flex-col items-center min-w-max">
-            <div
-              className={`w-8 h-8 flex items-center justify-center rounded-full ${
-                index <= loanTimelineStatuses.indexOf(currentStatus)
-                  ? activeStatusColor(status) + " text-white"
-                  : "bg-gray-300 text-gray-600"
-              }`}
-            >
-              {index + 1}
-            </div>
-            <span className={`mt-2 text-xs text-center`}>
-              {LoanStatusLabels[status]}
-            </span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center justify-between space-x-4 p-4 bg-white rounded-lg mb-4 border overflow-x-auto">
-      {loanTimelineStatuses.map((status, index) => (
-        <div key={index} className="flex flex-col items-center min-w-max">
-          <div
-            className={`w-8 h-8 flex items-center justify-center rounded-full ${
-              index <= loanTimelineStatuses.indexOf(currentStatus)
-                ? activeStatusColor(status) + " text-white"
-                : "bg-gray-300 text-gray-600"
-            }`}
-          >
-            {index + 1}
-          </div>
-          <span className={`mt-2 text-xs text-center`}>
-            {LoanStatusLabels[status]}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-const NotesSection = ({ notes, loanId, onAddNote, sender }) => {
-  const [newNote, setNewNote] = useState("");
-
-  const handleAddNote = async () => {
-    if (newNote.trim()) {
-      const note = {
-        text: newNote,
-        loanId: loanId,
-        senderId: sender.id,
-        createdAt: new Date(),
-      };
-
-      // Call the function to add the note
-      await onAddNote(note);
-
-      setNewNote("");
-    }
-  };
-
-  return (
-    <div className="bg-white shadow rounded-lg pt-2 p-4">
-      <h2 className="text-lg font-semibold text-gray-900 mb-2">Notes</h2>
-      <ul className="space-y-4">
-        {notes?.map((note, index) => (
-          <li
-            key={note.id}
-            className={` ${
-              index !== notes.length - 1 ? "border-b pb-4" : "pb-2"
-            }`}
-          >
-            <p className="text-gray-800 font-semibold">{note.sender.name}</p>
-            <p className="text-gray-600">{note.text}</p>
-            <p className="text-gray-500 text-sm">
-              {formatDateWithTime(note.createdAt)}
-            </p>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4">
-        <textarea
-          className="w-full p-2 border rounded focus:outline-none focus:ring"
-          rows={3}
-          placeholder="Add a note..."
-          value={newNote}
-          onChange={(e) => setNewNote(e.target.value)}
-        ></textarea>
-        <button
-          onClick={handleAddNote}
-          className="mt-2 px-4 py-2 bg-[#e74949] text-white rounded hover:bg-[#e74949]"
-        >
-          Add Note
-        </button>
-      </div>
-    </div>
-  );
 };
 
 const LoanPage = ({
@@ -332,6 +113,9 @@ const LoanPage = ({
   user: User;
   availableLoanAdmins: User[];
 }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editSection, setEditSection] = useState("");
+  const [formData, setFormData] = useState<any>({});
   const addNote = async (note) => {
     const response = await fetch(`/api/notes`, {
       method: "POST",
@@ -347,7 +131,6 @@ const LoanPage = ({
       console.log("Note added:", newNote);
     }
   };
-
   const updateStatus = async (newStatus) => {
     try {
       const response = await fetch(`/api/loans/${loan.id}`, {
@@ -372,57 +155,9 @@ const LoanPage = ({
       console.error("Error updating status:", error);
     }
   };
-
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Initial message", sender: "Partner" },
-  ]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editSection, setEditSection] = useState("");
-  const [formData, setFormData] = useState<{
-    clientName: string;
-    clientPhone: string;
-    clientEmail: string;
-    addressLine1: string;
-    addressLine2: string;
-    city: string;
-    state: string;
-    zip: string;
-    loanType: string;
-    loanAmount: number;
-    status: string;
-  }>({
-    clientName: "",
-    clientPhone: "",
-    clientEmail: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    zip: "",
-    loanType: "",
-    loanAmount: 0,
-    status: "",
-  });
-
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      const newMessageObj = {
-        id: messages.length + 1,
-        text: newMessage,
-        sender: "You",
-      };
-      setMessages([...messages, newMessageObj]);
-      setNewMessage("");
-    }
-  };
-
   const openModal = (section) => {
     setEditSection(section);
     setFormData({
-      clientName: loan.clientName,
-      clientPhone: loan.clientPhone,
-      clientEmail: loan.clientEmail,
       addressLine1: loan.address.addressLine1,
       addressLine2: loan.address.addressLine2,
       city: loan.address.city,
@@ -431,15 +166,34 @@ const LoanPage = ({
       loanType: loan.loanType,
       loanAmount: loan.loanAmount,
       status: loan.status,
+      paid: loan.paid,
+      partnerId: loan.partnerId,
+      companyId: loan.companyId,
+      loanAdminId: loan.loanAdminId,
+      borrowerFirstName: loan.borrowers[0].firstName,
+      borrowerLastName: loan.borrowers[0].lastName,
+      borrowerPhone: loan.borrowers[0].phone,
+      borrowerEmail: loan.borrowers[0].email,
+      borrowerEmployer: loan.borrowers[0].employer,
+      borrowerPosition: loan.borrowers[0].position,
+      borrowerIncome: loan.borrowers[0].income,
+      borrowerCredit: loan.borrowers[0].credit,
+      coBorrowerFirstName: loan.borrowers[1]?.firstName,
+      coBorrowerLastName: loan.borrowers[1]?.lastName,
+      coBorrowerPhone: loan.borrowers[1]?.phone,
+      coBorrowerEmail: loan.borrowers[1]?.email,
+      coBorrowerEmployer: loan.borrowers[1]?.employer,
+      coBorrowerPosition: loan.borrowers[1]?.position,
+      coBorrowerIncome: loan.borrowers[1]?.income,
+      coBorrowerCredit: loan.borrowers[1]?.credit,
     });
     setIsModalOpen(true);
   };
-
   const handleInputChange = (e) => {
+    console.log(e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const handleSubmit = async () => {
+  const handleUpdateLoan = async () => {
     try {
       const response = await fetch(`/api/loans/${loan.id}`, {
         method: "PUT",
@@ -466,18 +220,46 @@ const LoanPage = ({
     }
   };
 
-  const [activities, setActivities] = useState([
-    { id: 1, description: "Application submitted", date: new Date() },
-    { id: 2, description: "Credit check completed", date: new Date() },
-    { id: 3, description: "Loan approved", date: new Date() },
-  ]);
+  const handleUpdateBorrowers = async (borrower: "borrower" | "coBorrower") => {
+    const borrowerId = loan.borrowers[borrower === "borrower" ? 0 : 1].id;
+    const borrowerData = {
+      firstName: formData[`${borrower}FirstName`],
+      lastName: formData[`${borrower}LastName`],
+      email: formData[`${borrower}Email`],
+      phone: formData[`${borrower}Phone`],
+      employer: formData[`${borrower}Employer`],
+      position: formData[`${borrower}Position`],
+      income: formData[`${borrower}Income`],
+      credit: formData[`${borrower}Credit`],
+    };
+    try {
+      const response = await fetch(`/api/borrowers/${borrowerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(borrowerData),
+      });
 
+      if (response.ok) {
+        const updatedBorrower = await response.json();
+        console.log("Borrower updated:", updatedBorrower);
+        window.location.reload();
+      } else {
+        console.error("Failed to update borrower");
+      }
+    } catch (error) {
+      console.error("Error updating borrower:", error);
+    } finally {
+      setIsModalOpen(false);
+    }
+  };
   const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/loans/${loan.id}/read_only?access_code=${loan.accessCode}`;
-
+  const isAdmin = user.role === "COMPANY" || user.role === "LOAN_ADMIN";
   return (
     <>
       <PageContainer>
-        <Column col={8}>
+        <Column col={isAdmin ? 8 : 12}>
           <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
             <div className="flex justify-between items-center">
               <h1 className="text-xl font-semibold text-gray-900">
@@ -489,11 +271,12 @@ const LoanPage = ({
                   navigator.clipboard.writeText(loanLink);
                   (e.target as HTMLButtonElement).textContent = "Copied!";
                   setTimeout(() => {
-                    (e.target as HTMLButtonElement).textContent = "Share Link";
+                    (e.target as HTMLButtonElement).textContent =
+                      "Share Loan Link";
                   }, 1000);
                 }}
               >
-                Share Link
+                Share Loan Link
               </button>
             </div>
             <div className="text-center font-semibold pb-2">Loan Timeline</div>
@@ -502,22 +285,49 @@ const LoanPage = ({
               <div className="bg-gray-100 p-4 rounded-lg ">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
                   Client Information
-                  <button
-                    onClick={() => openModal("client")}
-                    className="text-[#e74949]"
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                  </button>
                 </h2>
-                <p>
-                  <strong>Name:</strong> {loan.clientName}
-                </p>
-                <p>
-                  <strong>Phone:</strong> {loan.clientPhone}
-                </p>
-                <p>
-                  <strong>Email:</strong> {loan.clientEmail}
-                </p>
+                <div className="flex gap-4 flex-col">
+                  {loan.borrowers?.map((borrower, index) => (
+                    <div key={borrower.id}>
+                      {borrower.coBorrower && (
+                        <p className="text-gray-900">Co-Borrower</p>
+                      )}
+                      <p>
+                        <strong>Name: </strong>
+                        {borrower.firstName} {borrower.lastName}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong> {borrower.phone}
+                      </p>
+                      <p>
+                        <strong>Email:</strong> {borrower.email}
+                      </p>
+                      <p>
+                        <strong>Employer:</strong> {borrower.employer}
+                      </p>
+                      <p>
+                        <strong>Position:</strong> {borrower.position}
+                      </p>
+                      <p>
+                        <strong>Income:</strong> $
+                        {borrower.income.toLocaleString()}
+                      </p>
+                      <p>
+                        <strong>Credit:</strong> {borrower.credit}
+                      </p>
+                      <button
+                        onClick={() =>
+                          openModal(
+                            `${index === 0 ? "borrower" : "coBorrower"}`
+                          )
+                        }
+                        className="text-[#e74949]"
+                      >
+                        <PencilSquareIcon className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
@@ -569,7 +379,7 @@ const LoanPage = ({
                 </p>
                 {/* Loan Admins Panel */}
                 {user.role === "COMPANY" && (
-                  <LoanAdminsPanel
+                  <LoanAdminPanel
                     availableLoanAdmins={availableLoanAdmins}
                     selectedAdmin={
                       availableLoanAdmins.filter(
@@ -596,15 +406,16 @@ const LoanPage = ({
             </div>
           </div>
         </Column>
-        <Column col={4}>
-          {/* Status Panel */}
-          {["COMPANY", "LOAN_ADMIN"].includes(user.role) && (
+        {isAdmin && (
+          <Column col={4}>
+            {/* Status Panel */}
+
             <UpdateStatusPanel
               currentStatus={loan.status}
               updateStatus={updateStatus}
             />
-          )}
-          {/* Activity Log
+
+            {/* Activity Log
           <div className="bg-white shadow rounded-lg pt-2 p-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 mb-2 pb-2">
@@ -630,7 +441,8 @@ const LoanPage = ({
               </ul>
             </div>
           </div> */}
-        </Column>
+          </Column>
+        )}
         <Column col={12}>
           <NotesSection
             notes={notes}
@@ -646,34 +458,6 @@ const LoanPage = ({
           <div className="bg-white p-4 rounded-lg shadow-lg w-96">
             <h2 className="text-lg font-semibold mb-4">Edit {editSection}</h2>
             <div className="space-y-4">
-              {editSection === "client" && (
-                <>
-                  <input
-                    type="text"
-                    name="clientName"
-                    value={formData.clientName}
-                    onChange={handleInputChange}
-                    placeholder="Client Name"
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                  />
-                  <input
-                    type="text"
-                    name="clientPhone"
-                    value={formData.clientPhone}
-                    onChange={handleInputChange}
-                    placeholder="Client Phone"
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                  />
-                  <input
-                    type="email"
-                    name="clientEmail"
-                    value={formData.clientEmail}
-                    onChange={handleInputChange}
-                    placeholder="Client Email"
-                    className="w-full border border-gray-300 rounded-lg p-2"
-                  />
-                </>
-              )}
               {editSection === "address" && (
                 <>
                   <input
@@ -748,6 +532,163 @@ const LoanPage = ({
                   />
                 </>
               )}
+              {editSection === "borrower" && (
+                <>
+                  <input
+                    type="text"
+                    name="borrowerFirstName"
+                    value={formData.borrowerFirstName}
+                    onChange={handleInputChange}
+                    placeholder="First Name"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    type="text"
+                    name="borrowerLastName"
+                    value={formData.borrowerLastName}
+                    onChange={handleInputChange}
+                    placeholder="Last Name"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    type="text"
+                    name="borrowerPhone"
+                    value={formData.borrowerPhone}
+                    onChange={handleInputChange}
+                    placeholder="Phone"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    type="email"
+                    name="borrowerEmail"
+                    value={formData.borrowerEmail}
+                    onChange={handleInputChange}
+                    placeholder="Email"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    placeholder="Employer"
+                    type="text"
+                    name="borrowerEmployer"
+                    value={formData.borrowerEmployer}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    required
+                  />
+
+                  <input
+                    placeholder="Position"
+                    type="text"
+                    name="borrowerPosition"
+                    value={formData.borrowerPosition}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    required
+                  />
+
+                  <input
+                    placeholder="Income"
+                    type="number"
+                    name="borrowerIncome"
+                    value={formData.borrowerIncome}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    step="0.01"
+                    required
+                  />
+
+                  <select
+                    name="borrowerCredit"
+                    value={formData.borrowerCredit}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    required
+                  >
+                    <option value="">Select Credit Rating</option>
+                    <option value="EXCELLENT">Excellent (750+)</option>
+                    <option value="GOOD">Good (700-749)</option>
+                    <option value="FAIR">Fair (650-699)</option>
+                    <option value="POOR">Poor (Below 650)</option>
+                  </select>
+                </>
+              )}
+              {editSection === "coBorrower" && (
+                <>
+                  <input
+                    type="text"
+                    name="coBorrowerFirstName"
+                    value={formData.coBorrowerFirstName}
+                    onChange={handleInputChange}
+                    placeholder="First Name"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    type="text"
+                    name="coBorrowerLastName"
+                    value={formData.coBorrowerLastName}
+                    onChange={handleInputChange}
+                    placeholder="Last Name"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    type="text"
+                    name="coBorrowerPhone"
+                    value={formData.coBorrowerPhone}
+                    onChange={handleInputChange}
+                    placeholder="Phone"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    type="email"
+                    name="coBorrowerEmail"
+                    value={formData.coBorrowerEmail}
+                    onChange={handleInputChange}
+                    placeholder="Email"
+                    className="w-full border border-gray-300 rounded-lg p-2"
+                  />
+                  <input
+                    placeholder="Employer"
+                    type="text"
+                    name="coBorrowerEmployer"
+                    value={formData.coBorrowerEmployer}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    required
+                  />
+                  <input
+                    placeholder="Position"
+                    type="text"
+                    name="coBorrowerPosition"
+                    value={formData.coBorrowerPosition}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    required
+                  />
+                  <input
+                    placeholder="Income"
+                    type="number"
+                    name="coBorrowerIncome"
+                    value={formData.coBorrowerIncome}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    step="0.01"
+                    required
+                  />
+                  <select
+                    name="coBorrowerCredit"
+                    value={formData.coBorrowerCredit}
+                    onChange={handleInputChange}
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    required
+                  >
+                    <option value="">Select Credit Rating</option>
+                    <option value="EXCELLENT">Excellent (750+)</option>
+                    <option value="GOOD">Good (700-749)</option>
+                    <option value="FAIR">Fair (650-699)</option>
+                    <option value="POOR">Poor (Below 650)</option>
+                  </select>
+                </>
+              )}
             </div>
             <div className="flex justify-end mt-4">
               <button
@@ -757,7 +698,11 @@ const LoanPage = ({
                 Cancel
               </button>
               <button
-                onClick={handleSubmit}
+                onClick={() =>
+                  editSection === "borrower" || editSection === "coBorrower"
+                    ? handleUpdateBorrowers(editSection)
+                    : handleUpdateLoan()
+                }
                 className="bg-[#e74949] text-white py-2 px-4 rounded-lg"
               >
                 Save

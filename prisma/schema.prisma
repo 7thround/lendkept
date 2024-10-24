@@ -107,6 +107,8 @@ model Borrower {
   credit    CreditRating?
   loans     Loan[]
   notes     Note[]
+  createdAt DateTime @default(now())
+  coBorrower Boolean @default(false)
 }
 
 enum CreditRating {

@@ -71,9 +71,6 @@ async function updateLoan(
     const updatedLoan = await prisma.loan.update({
       where: { id: Number(id) },
       data: {
-        clientName,
-        clientPhone,
-        clientEmail,
         loanType,
         loanAmount,
         status,

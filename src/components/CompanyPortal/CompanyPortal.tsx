@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import { Column, PageContainer } from "../Layout/PageParts";
 import { Company, Partner, User } from "@prisma/client";
 import { DEFAULT_PASSWORD, LoanStatusLabels } from "../../constants";
-import { LoanWithAddress } from "../../../types";
 import axios from "axios";
 
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, message }) => {

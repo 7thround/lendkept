@@ -89,6 +89,7 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
     partnerId,
     companyId,
     loanAdminId,
+    includeCoBorrower,
   } = req.body;
 
   try {
@@ -121,28 +122,31 @@ async function createLoan(req: NextApiRequest, res: NextApiResponse) {
           annualIncome: parseFloat(annualIncome),
           monthlyDebt: parseFloat(monthlyDebt),
           borrowers: {
-            create: {
-              firstName: borrowerFirstName,
-              lastName: borrowerLastName,
-              email: borrowerEmail,
-              phone: borrowerPhone,
-              employer: borrowerEmployer,
-              position: borrowerPosition,
-              income: parseFloat(borrowerIncome),
-              credit: borrowerCredit as CreditRating,
-            },
-            ...(coBorrowerFirstName && {
-              create: {
-                firstName: coBorrowerFirstName,
-                lastName: coBorrowerLastName,
-                email: coBorrowerEmail,
-                phone: coBorrowerPhone,
-                employer: coBorrowerEmployer,
-                position: coBorrowerPosition,
-                income: parseFloat(coBorrowerIncome),
-                credit: coBorrowerCredit as CreditRating,
+            create: [
+              {
+                firstName: borrowerFirstName,
+                lastName: borrowerLastName,
+                email: borrowerEmail,
+                phone: borrowerPhone,
+                employer: borrowerEmployer,
+                position: borrowerPosition,
+                income: parseFloat(borrowerIncome),
+                credit: borrowerCredit as CreditRating,
               },
-            }),
+              ...(coBorrowerFirstName && includeCoBorrower
+                ? [{
+                  firstName: coBorrowerFirstName,
+                  lastName: coBorrowerLastName,
+                  email: coBorrowerEmail,
+                  phone: coBorrowerPhone,
+                  employer: coBorrowerEmployer,
+                  position: coBorrowerPosition,
+                  income: parseFloat(coBorrowerIncome),
+                  credit: coBorrowerCredit as CreditRating,
+                  coBorrower: true,
+                }]
+                : []),
+            ],
           },
         },
       });

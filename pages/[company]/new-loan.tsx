@@ -40,7 +40,8 @@ const MortgageApplicationForm = ({ company }: Props) => {
     loanType: "HOME_PURCHASE",
   } as any);
   const [loanSubmitted, setLoanSubmitted] = useState(false);
-  console.log(formData);
+  const [includeCoBorrower, setIncludeCoBorrower] = useState(false);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -58,6 +59,7 @@ const MortgageApplicationForm = ({ company }: Props) => {
 
     // Add company id to the payload
     formData.companyId = company.id;
+    formData.includeCoBorrower = includeCoBorrower;
 
     const response = await fetch("/api/loans", {
       method: "POST",
@@ -76,7 +78,7 @@ const MortgageApplicationForm = ({ company }: Props) => {
     }
   };
 
-  return loanSubmitted ? (
+  return !loanSubmitted ? (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded border-t-4 border-gray-500">
       <h1 className="text-2xl font-bold mb-4 text-center">Loan Application</h1>
       {/* Company Info Section */}
@@ -100,6 +102,8 @@ const MortgageApplicationForm = ({ company }: Props) => {
         handleSubmit={handleSubmit}
         setFormData={setFormData}
         handleChange={handleChange}
+        includeCoBorrower={includeCoBorrower}
+        setIncludeCoBorrower={setIncludeCoBorrower}
       />
     </div>
   ) : (
