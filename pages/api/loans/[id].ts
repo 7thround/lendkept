@@ -22,7 +22,7 @@ export default async function handler(
 }
 
 async function getLoan(req: NextApiRequest, res: NextApiResponse, id: string) {
-  const loan = await prisma.loan.findUnique({ where: { id } });
+  const loan = await prisma.loan.findUnique({ where: { id: Number(id) } });
   if (loan) {
     res.status(200).json(loan);
   } else {
@@ -37,9 +37,6 @@ async function updateLoan(
 ) {
   try {
     const {
-      clientName,
-      clientPhone,
-      clientEmail,
       addressLine1,
       addressLine2,
       city,
@@ -51,25 +48,33 @@ async function updateLoan(
       paid,
       partnerId,
       companyId,
+      addressId,
+      loanAdminId,
     } = req.body;
 
+    const newAddress = {
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      zip,
+    };
+
+    await prisma.address.update({
+      where: { id: addressId },
+      data: newAddress,
+    });
+
     const updatedLoan = await prisma.loan.update({
-      where: { id },
+      where: { id: Number(id) },
       data: {
-        clientName,
-        clientPhone,
-        clientEmail,
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        zip,
         loanType,
         loanAmount,
         status,
         paid,
         partnerId,
         companyId,
+        loanAdminId
       },
     });
 
@@ -86,6 +91,6 @@ async function deleteLoan(
   res: NextApiResponse,
   id: string
 ) {
-  await prisma.loan.delete({ where: { id } });
+  await prisma.loan.delete({ where: { id: Number(id) } });
   res.status(204).end();
 }

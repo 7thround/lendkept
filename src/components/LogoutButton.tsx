@@ -9,7 +9,11 @@ const LogoutButton = () => {
     router.push("/login");
   };
 
-  return <button onClick={handleLogout}>Logout</button>;
+  return (
+    <button className="text-white hover:text-gray-300" onClick={handleLogout}>
+      Logout
+    </button>
+  );
 };
 
 export default LogoutButton;

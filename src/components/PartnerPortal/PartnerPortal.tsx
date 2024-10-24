@@ -5,6 +5,7 @@ import { Company, Loan, Partner } from "@prisma/client";
 import { PageContainer, Column } from "../Layout/PageParts";
 import { copyToClipboard } from "../../utils";
 import { LoanStatusLabels } from "../../constants";
+import { LoanWithAddress } from "../../../types";
 
 const PartnerPortal = ({
   partner,
@@ -15,9 +16,9 @@ const PartnerPortal = ({
 }: {
   partner: Partner;
   company: Company;
-  loans: Loan[];
+  loans: LoanWithAddress[];
   partners: Partner[];
-  referredLoans: Loan[];
+  referredLoans: LoanWithAddress[];
 }) => {
   const router = useRouter();
   const [message, setMessage] = useState("");
@@ -76,7 +77,7 @@ const PartnerPortal = ({
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg flex flex-col flex-grow">
           <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
-            Welcome, {partner.name}!
+            Loans
           </h2>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">
@@ -101,7 +102,7 @@ const PartnerPortal = ({
                   loans.map((loan) => (
                     <tr key={loan.id}>
                       <td className="py-2 px-4 whitespace-nowrap">
-                        {loan.addressLine1}
+                        {loan.address.addressLine1}
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap">
                         ${loan.loanAmount.toLocaleString()}
@@ -162,7 +163,7 @@ const PartnerPortal = ({
                   referredLoans.map((loan) => (
                     <tr key={loan.id}>
                       <td className="py-2 px-4 whitespace-nowrap">
-                        {loan.addressLine1}
+                        {loan.address.addressLine1}
                       </td>
                       <td className="py-2 px-4 whitespace-nowrap">
                         ${loan.loanAmount.toLocaleString()}

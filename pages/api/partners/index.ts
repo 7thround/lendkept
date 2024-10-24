@@ -47,22 +47,17 @@ async function createPartner(req: NextApiRequest, res: NextApiResponse) {
 
   try {
     const result = await prisma.$transaction(async (prisma) => {
-      const referringPartner = await prisma.partner.findUnique({
-        where: { referralCode }
-      });
-
+      let referringPartner = null;
+      if (referralCode) {
+        referringPartner = await prisma.partner.findUnique({
+          where: { referralCode }
+        });
+      }
       // Generate a default referral code should be 6 random uppercase letters and numbers
       // Sample referral code: 3A5B7C
       const defaultReferralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-
-      const newPartner = await prisma.partner.create({
+      const address = await prisma.address.create({
         data: {
-          name,
-          email,
-          phone,
-          companyId,
-          referralCode: defaultReferralCode,
-          referringPartnerId: referringPartner ? referringPartner.id : null,
           addressLine1,
           addressLine2,
           city,
@@ -70,13 +65,31 @@ async function createPartner(req: NextApiRequest, res: NextApiResponse) {
           zip
         }
       });
-
+      if (!address) {
+        return res.status(400).json({ error: "Invalid Address" });
+      }
+      const newPartner = await prisma.partner.create({
+        data: {
+          name,
+          email,
+          phone,
+          companyId,
+          referralCode: defaultReferralCode,
+          referringPartnerId: referringPartner?.id || null,
+          addressId: address.id
+        }
+      });
+      if (!newPartner) {
+        return res.status(400).json({ error: "Invalid Partner" });
+      }
       const newUser = await prisma.user.create({
         data: {
           email,
           password: hashedPassword,
           role: 'PARTNER',
           partnerId: newPartner.id,
+          companyId,
+          name
         },
       });
 

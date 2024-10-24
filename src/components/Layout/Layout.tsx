@@ -34,10 +34,18 @@ const Header = ({
               Lend<span className="font-bold">KEPT</span>
             </h1>
           </a>
-          <div className="border-l border-white h-6" />
-          <a href="/classroom" className="text-white hover:text-gray-300">
-            Classroom
-          </a>
+          {user && (
+            <div className="hidden md:flex items-center gap-4">
+              <div className="border-l border-white h-6" />
+              <a href="/classroom" className="text-white hover:text-gray-300">
+                Classroom
+              </a>
+              <a href="/help" className="text-white hover:text-gray-300">
+                Help
+              </a>
+              {user && <LogoutButton />}
+            </div>
+          )}
         </div>
         <div>
           {showBackButton && (
@@ -49,7 +57,9 @@ const Header = ({
               Back
             </button>
           )}
-          {user && !showBackButton && <LogoutButton />}
+          {user && !showBackButton && (
+            <span className="text-white">Welcome, {user.name}</span>
+          )}
         </div>
       </div>
     </header>
@@ -64,18 +74,16 @@ const Footer = () => (
 
 const Layout = ({
   children,
-  header,
   user,
   showBackButton = false,
 }: {
   children: React.ReactNode;
-  header?: React.ReactNode;
   user?: any;
   showBackButton?: boolean;
 }) => {
   return (
     <div className="flex flex-col min-h-screen">
-      {header || <Header user={user} showBackButton={showBackButton} />}
+      <Header user={user} showBackButton={showBackButton} />
       <div className="flex-grow bg-gray-100 p-4">{children}</div>
       <Footer />
     </div>
