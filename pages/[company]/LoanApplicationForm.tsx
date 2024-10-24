@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import InputMask from "react-input-mask";
 
 const LoanApplicationForm = ({
@@ -9,6 +9,7 @@ const LoanApplicationForm = ({
   handleChange,
   includeCoBorrower,
   setIncludeCoBorrower,
+  adminLoan = false,
 }: {
   primaryColor: string;
   formData: any;
@@ -17,6 +18,7 @@ const LoanApplicationForm = ({
   handleChange: (e: any) => void;
   includeCoBorrower: boolean;
   setIncludeCoBorrower: (value: boolean) => void;
+  adminLoan?: boolean;
 }) => {
   return (
     <form onSubmit={handleSubmit} className="">
@@ -32,7 +34,6 @@ const LoanApplicationForm = ({
                   placeholder="First Name"
                   type="text"
                   name="borrowerFirstName"
-                  value={formData.borrowerFirstName}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   required
@@ -44,7 +45,6 @@ const LoanApplicationForm = ({
                   placeholder="Last Name"
                   type="text"
                   name="borrowerLastName"
-                  value={formData.borrowerLastName}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   required
@@ -56,7 +56,6 @@ const LoanApplicationForm = ({
                   placeholder="Email Address"
                   type="email"
                   name="borrowerEmail"
-                  value={formData.borrowerEmail}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   required
@@ -67,7 +66,6 @@ const LoanApplicationForm = ({
                 <InputMask
                   type="text"
                   name="borrowerPhone"
-                  value={formData.borrowerPhone}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   mask="(999) 999-9999"
@@ -81,7 +79,6 @@ const LoanApplicationForm = ({
                   placeholder="Employer"
                   type="text"
                   name="borrowerEmployer"
-                  value={formData.borrowerEmployer}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   required
@@ -93,7 +90,6 @@ const LoanApplicationForm = ({
                   placeholder="Position"
                   type="text"
                   name="borrowerPosition"
-                  value={formData.borrowerPosition}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   required
@@ -105,7 +101,6 @@ const LoanApplicationForm = ({
                   placeholder="Income"
                   type="number"
                   name="borrowerIncome"
-                  value={formData.borrowerIncome}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   step="0.01"
@@ -116,7 +111,6 @@ const LoanApplicationForm = ({
               <div className="col-span-1">
                 <select
                   name="borrowerCredit"
-                  value={formData.borrowerCredit}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   required
@@ -155,7 +149,6 @@ const LoanApplicationForm = ({
                     placeholder="First Name"
                     type="text"
                     name="coBorrowerFirstName"
-                    value={formData.coBorrowerFirstName}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                     required
@@ -167,7 +160,6 @@ const LoanApplicationForm = ({
                     placeholder="Last Name"
                     type="text"
                     name="coBorrowerLastName"
-                    value={formData.coBorrowerLastName}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                     required
@@ -179,7 +171,6 @@ const LoanApplicationForm = ({
                     placeholder="Email Address"
                     type="email"
                     name="coBorrowerEmail"
-                    value={formData.coBorrowerEmail}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                     required
@@ -190,7 +181,6 @@ const LoanApplicationForm = ({
                   <InputMask
                     type="text"
                     name="coBorrowerPhone"
-                    value={formData.coBorrowerPhone}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                     mask="(999) 999-9999"
@@ -204,7 +194,6 @@ const LoanApplicationForm = ({
                     placeholder="Employer"
                     type="text"
                     name="coBorrowerEmployer"
-                    value={formData.coBorrowerEmployer}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   />
@@ -215,7 +204,6 @@ const LoanApplicationForm = ({
                     placeholder="Position"
                     type="text"
                     name="coBorrowerPosition"
-                    value={formData.coBorrowerPosition}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                   />
@@ -226,7 +214,6 @@ const LoanApplicationForm = ({
                     placeholder="Income"
                     type="number"
                     name="coBorrowerIncome"
-                    value={formData.coBorrowerIncome}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                     step="0.01"
@@ -237,7 +224,6 @@ const LoanApplicationForm = ({
                 <div className="col-span-1">
                   <select
                     name="coBorrowerCredit"
-                    value={formData.coBorrowerCredit}
                     onChange={handleChange}
                     className="mt-1 block w-full p-2 border border-gray-300 rounded"
                     required
@@ -312,7 +298,6 @@ const LoanApplicationForm = ({
                   placeholder="Address Line 1"
                   type="text"
                   name="addressLine1"
-                  value={formData.addressLine1}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -324,7 +309,6 @@ const LoanApplicationForm = ({
                   placeholder="Address Line 2"
                   type="text"
                   name="addressLine2"
-                  value={formData.addressLine2}
                   onChange={handleChange}
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
                 />
@@ -335,7 +319,6 @@ const LoanApplicationForm = ({
                   placeholder="City"
                   type="text"
                   name="city"
-                  value={formData.city}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -347,7 +330,6 @@ const LoanApplicationForm = ({
                   placeholder="State"
                   type="text"
                   name="state"
-                  value={formData.state}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -359,7 +341,6 @@ const LoanApplicationForm = ({
                   placeholder="ZIP Code"
                   type="text"
                   name="zip"
-                  value={formData.zip}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -378,7 +359,6 @@ const LoanApplicationForm = ({
                 <input
                   type="number"
                   name="loanAmount"
-                  value={formData.loanAmount}
                   onChange={handleChange}
                   required
                   placeholder="Loan Amount"
@@ -391,7 +371,6 @@ const LoanApplicationForm = ({
                 <input
                   type="number"
                   name="downPayment"
-                  value={formData.downPayment}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -406,7 +385,6 @@ const LoanApplicationForm = ({
                   placeholder="Annual Income"
                   type="number"
                   name="annualIncome"
-                  value={formData.annualIncome}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -418,7 +396,6 @@ const LoanApplicationForm = ({
                   placeholder="Monthly Debt"
                   type="number"
                   name="monthlyDebt"
-                  value={formData.monthlyDebt}
                   onChange={handleChange}
                   required
                   className="mt-1 block w-full p-2 border border-gray-300 rounded"
@@ -430,72 +407,74 @@ const LoanApplicationForm = ({
         </div>
 
         {/* Credit Info Section */}
-        <div>
+        {!adminLoan && (
           <div>
-            <h2 className="font-semibold mb-2">Credit Info</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <InputMask
-                  placeholder="SSN"
-                  name="ssn"
-                  value={formData.ssn}
-                  onChange={handleChange}
-                  required
-                  className="mt-1 block w-full p-2 border border-gray-300 rounded"
-                  autoComplete="off"
-                  mask="999-99-9999"
-                  onBlur={(e) => {
-                    e.target.type = "password";
-                  }}
-                  onFocus={(e) => {
-                    e.target.type = "text";
-                  }}
-                />
+            <div>
+              <h2 className="font-semibold mb-2">Credit Info</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="col-span-2">
+                  <InputMask
+                    placeholder="SSN"
+                    name="ssn"
+                    onChange={handleChange}
+                    required
+                    className="mt-1 block w-full p-2 border border-gray-300 rounded"
+                    autoComplete="off"
+                    mask="999-99-9999"
+                    onBlur={(e) => {
+                      e.target.type = "password";
+                    }}
+                    onFocus={(e) => {
+                      e.target.type = "text";
+                    }}
+                  />
+                </div>
               </div>
             </div>
+            {/* Credit Consent Section */}
+            <div className="mt-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="creditConsent"
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">
+                  I consent to a credit check
+                </span>
+              </label>
+            </div>
+            <div className="mt-4 text-sm text-gray-600">
+              <p>
+                <strong>Disclaimer:</strong> By providing your Social Security
+                Number (SSN), you consent to its use for the purpose of
+                processing your mortgage application. We are committed to
+                protecting your privacy and will handle your information
+                securely in compliance with applicable data protection laws.
+                Your SSN will be encrypted and stored securely, and access will
+                be limited to authorized personnel only. For more information,
+                please refer to our
+                <a
+                  href="#"
+                  style={{ color: primaryColor }}
+                  className="underline ml-1"
+                >
+                  Privacy Policy
+                </a>
+                .
+              </p>
+            </div>
           </div>
-          {/* Credit Consent Section */}
-          <div className="mt-4">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="creditConsent"
-                onChange={handleChange}
-                className="mr-2"
-              />
-              <span className="text-sm text-gray-700">
-                I consent to a credit check
-              </span>
-            </label>
-          </div>
-          <div className="mt-4 text-sm text-gray-600">
-            <p>
-              <strong>Disclaimer:</strong> By providing your Social Security
-              Number (SSN), you consent to its use for the purpose of processing
-              your mortgage application. We are committed to protecting your
-              privacy and will handle your information securely in compliance
-              with applicable data protection laws. Your SSN will be encrypted
-              and stored securely, and access will be limited to authorized
-              personnel only. For more information, please refer to our
-              <a
-                href="#"
-                style={{ color: primaryColor }}
-                className="underline ml-1"
-              >
-                Privacy Policy
-              </a>
-              .
-            </p>
-          </div>
-        </div>
+        )}
         {/* Submit Button */}
         <div className="mt-3 text-center">
           <button
             type="submit"
             style={{ backgroundColor: primaryColor }}
-            className="px-6 py-3 text-white rounded w-full md:w-auto"
+            className="px-6 py-2 text-white rounded w-full md:w-auto"
           >
-            Submit Application
+            {!adminLoan ? "Submit Application" : "Submit Loan"}
           </button>
         </div>
       </div>
