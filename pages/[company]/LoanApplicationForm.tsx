@@ -20,6 +20,7 @@ const LoanApplicationForm = ({
   setIncludeCoBorrower: (value: boolean) => void;
   adminLoan?: boolean;
 }) => {
+  if (!formData) return null;
   return (
     <form onSubmit={handleSubmit} className="">
       <div className="flex flex-col gap-6">
