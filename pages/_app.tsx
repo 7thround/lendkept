@@ -3,7 +3,7 @@ import "../src/styles/globals.css";
 
 function App({ Component, pageProps, router }) {
   const showBackButton =
-    router.route.includes("/register") ||
+    router.route.includes("h1mb/register") ||
     router.route.includes("/new-loan") ||
     (router.route.includes("loans") && !router.route.includes("read_only"));
   return (
