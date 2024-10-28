@@ -117,10 +117,10 @@ const LoanApplicationForm = ({
                   required
                 >
                   <option value="">Select Credit Rating</option>
-                  <option value="EXCELLENT">Excellent (750+)</option>
-                  <option value="GOOD">Good (700-749)</option>
-                  <option value="FAIR">Fair (650-699)</option>
-                  <option value="POOR">Poor (Below 650)</option>
+                  <option value="EXCELLENT">Excellent (700+)</option>
+                  <option value="GOOD">Good (650-699)</option>
+                  <option value="FAIR">Fair (600-649)</option>
+                  <option value="POOR">Poor (Below 600)</option>
                 </select>
               </div>
             </div>
@@ -212,7 +212,7 @@ const LoanApplicationForm = ({
 
                 <div className="col-span-1">
                   <input
-                    placeholder="Income"
+                    placeholder="Annual Income"
                     type="number"
                     name="coBorrowerIncome"
                     onChange={handleChange}
