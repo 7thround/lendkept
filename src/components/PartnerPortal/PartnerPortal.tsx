@@ -32,8 +32,9 @@ const PartnerPortal = ({
 
   const referralLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/apply?referralCode=${partner.referralCode}`;
   const [referralLoans, setReferralBonuses] = useState([
-    { name: "John Doe", amount: 250 },
-    { name: "Jane Smith", amount: 500 },
+    { name: "Jerry Malcolm", amount: 500 },
+    { name: "James Duran", amount: 1500 },
+    { name: "Jessica Hernandez", amount: 650 },
   ]);
 
   const [copyText, setCopyText] = useState<String | JSX.Element>(
