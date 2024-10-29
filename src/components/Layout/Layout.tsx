@@ -3,7 +3,27 @@ import React from "react";
 import LogoutButton from "../LogoutButton";
 import { User } from "@prisma/client";
 import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
+import { Metadata } from "next/types";
 
+export const metadata: Metadata = {
+  title: "Flow",
+  description: "AI-Powered Chat Application for Business & Life",
+  keywords:
+    "AI, Chat Application, Business, Personal, Generative Language Model, Communication, Collaboration, Productivity",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#151515" },
+  ],
+  appleWebApp: {
+    title: "Flow: AI-Powered Chat Application",
+    statusBarStyle: "default",
+  },
+};
 const Header = ({
   user,
   showBackButton,
@@ -37,7 +57,10 @@ const Header = ({
           {user && (
             <div className="hidden md:flex items-center gap-4">
               <div className="border-l border-white h-6" />
-              <a href="/classroom" className="text-white hover:text-gray-300">
+              <a
+                href="https://7throundclub.com"
+                className="text-white hover:text-gray-300"
+              >
                 Classroom
               </a>
               <a href="/help" className="text-white hover:text-gray-300">
