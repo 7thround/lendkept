@@ -38,6 +38,7 @@ model Company {
   slug         String   @unique @default(uuid())
   url          String?
   primaryColor String?
+  email        String?
 }
 
 model Note {
