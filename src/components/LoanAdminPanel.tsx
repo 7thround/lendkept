@@ -1,3 +1,5 @@
+import { sendEmail } from "../utils";
+
 const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
   const handleChange = async (e) => {
     const loanAdminId = e.target.value;
@@ -15,6 +17,12 @@ const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
     });
 
     if (response.ok) {
+      sendEmail(
+        availableLoanAdmins.find((admin) => admin.id === loanAdminId).email,
+        "You have been assigned a new loan",
+        "loanOfficerAdded",
+        { loan }
+      );
       const updatedLoan = await response.json();
       console.log("Loan updated:", updatedLoan);
       window.location.reload();
