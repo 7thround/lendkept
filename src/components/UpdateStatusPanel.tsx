@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LoanStatusLabels } from "../constants";
+import ConfirmationModal from "./common/ConfirmationModal";
 
 const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
@@ -15,10 +16,6 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
 
   const handleConfirmUpdate = () => {
     updateStatus(selectedStatus);
-    setIsModalOpen(false);
-  };
-
-  const handleCancel = () => {
     setIsModalOpen(false);
   };
 
@@ -46,31 +43,20 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 text-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-xl mx-auto">
-            <h4 className="text-xl font-bold mb-2">Confirm Status Update</h4>
-            <p className="mb-4">
-              Are you sure you want to update the loan status to{" "}
+        <ConfirmationModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setSelectedStatus(currentStatus);
+            setIsModalOpen(false);
+          }}
+          onConfirm={handleConfirmUpdate}
+          message={
+            <p>
+              Are you sure you want to update the status to{" "}
               <strong>{LoanStatusLabels[selectedStatus]}</strong>?
             </p>
-            <div className="flex justify-center space-x-3">
-              <button
-                onClick={handleConfirmUpdate}
-                className="px-4 py-2 bg-[#e74949] text-white rounded hover:brightness-110"
-                aria-label="Confirm"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 border-1 border-gray-300 text-gray-700 rounded hover:bg-gray-100"
-                aria-label="Cancel"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+          }
+        />
       )}
     </div>
   );

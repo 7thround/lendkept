@@ -1,21 +1,23 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
+import { LoanType, User } from "@prisma/client";
+import cookie from "cookie";
+import { useRouter } from "next/router";
 import React, { useState } from "react";
+import { getUser } from "../..";
+import prisma from "../../../lib/prisma";
+import ConfirmationModal from "../../../src/components/common/ConfirmationModal";
 import {
   Column,
   FullScreenLoader,
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
-import prisma from "../../../lib/prisma";
-import { LoanType, User } from "@prisma/client";
-import { getUser } from "../..";
-import cookie from "cookie";
-import { PreLoadedLoanData } from "../../../types";
 import LoanAdminPanel from "../../../src/components/LoanAdminPanel";
+import LoanDetails from "../../../src/components/LoanDetails";
 import LoanTimeline from "../../../src/components/LoanTimeline";
 import NotesSection from "../../../src/components/NotesSection";
 import UpdateStatusPanel from "../../../src/components/UpdateStatusPanel";
 import { fetchLoanDetails } from "../../../src/utils/api";
-import { useRouter } from "next/router";
+import { PreLoadedLoanData } from "../../../types";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
@@ -77,6 +79,7 @@ const LoanPage = ({
   const [editSection, setEditSection] = useState("");
   const [formData, setFormData] = useState<any>({});
   const [loading, setLoading] = useState(false);
+  const [isDeletingLoan, setIsDeletingLoan] = useState(false);
   const fetchLoan = async () => {
     const response = await fetch(`/api/loans/${loan.id}`);
     if (response.ok) {
@@ -86,6 +89,7 @@ const LoanPage = ({
   };
   const deleteLoan = async () => {
     setLoading(true);
+    setIsDeletingLoan(true);
     try {
       const response = await fetch(`/api/loans/${loan.id}`, {
         method: "DELETE",
@@ -267,6 +271,9 @@ const LoanPage = ({
   };
   const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/loans/${loan.id}/read_only?access_code=${loan.accessCode}`;
   const isAdmin = user.role === "COMPANY" || user.role === "LOAN_ADMIN";
+  const assignedOfficer = availableLoanAdmins.filter(
+    (admin) => admin.id === loan.loanAdminId
+  )[0];
 
   React.useEffect(() => {
     const handleKeyDown = (e) => {
@@ -282,33 +289,16 @@ const LoanPage = ({
     };
   }, [isModalOpen, editSection, formData]);
 
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const ConfirmDeleteLoan = () => {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div className="bg-white p-4 rounded-lg shadow-lg w-96">
-          <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
-          <p className="text-gray-700">
-            Are you sure you want to delete this loan?
-          </p>
-          <div className="flex justify-end mt-4">
-            <button
-              onClick={deleteLoan}
-              className="bg-[#e74949] text-white py-2 px-4 rounded-lg disabled:opacity-70 mr-2 text-sm"
-              disabled={loading}
-            >
-              Delete Loan
-            </button>
-            <button
-              onClick={() => setShowConfirmDelete(false)}
-              className="bg-gray-300 text-black py-2 px-4 rounded-lg text-sm"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    onConfirm: () => {},
+    message: "",
+  });
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      ...confirmModal,
+      isOpen: false,
+    });
   };
 
   return (
@@ -316,25 +306,28 @@ const LoanPage = ({
       {(!loan || loading) && <FullScreenLoader />}
       <PageContainer>
         <Column col={isAdmin ? 8 : 12}>
-          <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
-            <div className="flex justify-between items-center">
+          <div className="bg-white shadow rounded-lg p-4 flex-grow">
+            <div className="flex justify-between items-center ">
               <h1 className="text-xl font-semibold text-gray-900">
                 Loan Details
               </h1>
               <button
-                className="px-2 py-1 mt-1 border border-[#e74949] text-[#e74949] rounded-lg flex items-center space-x-2 text-sm"
+                className="px-2 py-1 border border-[#e74949] text-[#e74949] rounded-lg flex items-center space-x-2 text-sm hover:brightness-110"
                 onClick={(e) => {
                   navigator.clipboard.writeText(loanLink);
                   (e.target as HTMLButtonElement).textContent = "Copied!";
                   setTimeout(() => {
-                    (e.target as HTMLButtonElement).textContent = "Client Link";
+                    (e.target as HTMLButtonElement).textContent = "Share Link";
                   }, 1000);
                 }}
               >
-                Client Link
+                Share Link
               </button>
             </div>
-            <div className="text-center font-semibold pb-2">Loan Timeline</div>
+            <LoanDetails loan={loan} assignedOfficer={assignedOfficer} />
+            <div className="text-center font-semibold pb-2 text-xl mt-4">
+              Loan Status
+            </div>
             <LoanTimeline currentStatus={loan.status} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">
@@ -370,18 +363,20 @@ const LoanPage = ({
                       <p>
                         <strong>Credit:</strong> {borrower.credit}
                       </p>
-                      <button
-                        onClick={() =>
-                          openModal(
-                            `${index === 0 ? "borrower" : "coBorrower"}`
-                          )
-                        }
-                        className="text-[#e74949] mt-2"
-                      >
-                        <div className="flex items-center gap-1">
-                          Edit <PencilSquareIcon className="h-5 w-5" />
-                        </div>
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() =>
+                            openModal(
+                              `${index === 0 ? "borrower" : "coBorrower"}`
+                            )
+                          }
+                          className="text-[#e74949] mt-2"
+                        >
+                          <div className="flex items-center gap-1">
+                            Edit <PencilSquareIcon className="h-5 w-5" />
+                          </div>
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -389,12 +384,14 @@ const LoanPage = ({
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
                   Property Address
-                  <button
-                    onClick={() => openModal("address")}
-                    className="text-[#e74949]"
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => openModal("address")}
+                      className="text-[#e74949]"
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                  )}
                 </h2>
                 <p>
                   <strong>Line 1:</strong> {loan.address.addressLine1}
@@ -415,12 +412,14 @@ const LoanPage = ({
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
                   Loan Details
-                  <button
-                    onClick={() => openModal("loan")}
-                    className="text-[#e74949]"
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => openModal("loan")}
+                      className="text-[#e74949]"
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                  )}
                 </h2>
                 <p>
                   <strong>Type:</strong> {loan.loanType}
@@ -435,7 +434,7 @@ const LoanPage = ({
                   <strong>Paid:</strong> {loan.paid ? "Yes" : "No"}
                 </p>
                 {/* Loan Admins Panel */}
-                {user.role === "COMPANY" && (
+                {isAdmin && (
                   <LoanAdminPanel
                     availableLoanAdmins={availableLoanAdmins}
                     selectedAdmin={
@@ -461,15 +460,22 @@ const LoanPage = ({
                 </p>
               </div>
             </div>
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setShowConfirmDelete(true)}
-                className="text-[#e74949] py-2 px-4 rounded-lg disabled:opacity-70 text-sm hover:underline"
-                disabled={loading}
-              >
-                Delete Loan
-              </button>
-              {showConfirmDelete && <ConfirmDeleteLoan />}
+            <div className="flex justify-end mt-2">
+              {isAdmin && (
+                <button
+                  onClick={() =>
+                    setConfirmModal({
+                      isOpen: true,
+                      onConfirm: deleteLoan,
+                      message: "Are you sure you want to delete this loan?",
+                    })
+                  }
+                  className="text-[#e74949] py-2 px-4 rounded-lg disabled:opacity-70 text-sm hover:underline"
+                  disabled={loading}
+                >
+                  {isDeletingLoan ? "Deleting..." : "Delete this loan"}
+                </button>
+              )}
             </div>
           </div>
         </Column>
@@ -782,6 +788,12 @@ const LoanPage = ({
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => closeConfirmModal()}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+      />
     </>
   );
 };

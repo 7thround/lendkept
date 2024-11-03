@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import { Company, Partner } from "@prisma/client";
+import cookie from "cookie";
+import { useEffect, useState } from "react";
+import { getUser } from "../..";
+import prisma from "../../../lib/prisma";
 import {
   Column,
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
-import prisma from "../../../lib/prisma";
-import { Company, Partner } from "@prisma/client";
-import { getUser } from "../..";
-import cookie from "cookie";
-import { LoanWithAddress } from "../../../types";
+import LoanDetails from "../../../src/components/LoanDetails";
 import LoanTimeline from "../../../src/components/LoanTimeline";
+import { LoanWithAddress } from "../../../types";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
@@ -39,6 +40,17 @@ export const getServerSideProps = async (context) => {
     where: { id: loan.companyId },
   });
 
+  const loanAdmin = await prisma.user.findUnique({
+    where: {
+      id: loan.loanAdminId,
+    },
+    select: {
+      name: true,
+      id: true,
+      email: true,
+    },
+  });
+
   const { req } = context;
   const cookies = req.headers.cookie;
   const parsedCookies = cookie.parse(cookies || "");
@@ -50,6 +62,7 @@ export const getServerSideProps = async (context) => {
       partner,
       company,
       user: await getUser(token),
+      loanAdmin,
     },
   };
 };
@@ -58,10 +71,12 @@ const LoanPage = ({
   loan,
   partner,
   company,
+  loanAdmin,
 }: {
   loan: LoanWithAddress;
   partner: Partner;
   company: Company;
+  loanAdmin: { name: string; email: string; id: number };
 }) => {
   const [accessCode, setAccessCode] = useState("");
   useEffect(() => {
@@ -129,9 +144,10 @@ const LoanPage = ({
       <PageContainer>
         <Column col={12}>
           <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
-            <h1 className="text-xl text-center font-semibold pb-2">
-              Loan Timeline
-            </h1>
+            <LoanDetails loan={loan} assignedOfficer={loanAdmin} />
+            <div className="text-center font-semibold pb-2 text-xl mt-4">
+              Loan Status
+            </div>
             <LoanTimeline currentStatus={loan.status} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">

@@ -1,9 +1,10 @@
 // components/Layout.js
+import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
+import { User } from "@prisma/client";
+import { Metadata } from "next/types";
 import React from "react";
 import LogoutButton from "../LogoutButton";
-import { User } from "@prisma/client";
-import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
-import { Metadata } from "next/types";
+import { useRouter } from "next/router";
 
 export const metadata: Metadata = {
   title: "Flow",
@@ -31,6 +32,7 @@ const Header = ({
   user: User;
   showBackButton?: boolean;
 }) => {
+  const router = useRouter();
   return (
     <header className="bg-gray-900 text-white p-0">
       <div className="flex items-center justify-between gap-4 mx-auto py-4 px-4 sm:px-4 lg:px-8">
@@ -73,7 +75,7 @@ const Header = ({
         <div>
           {showBackButton && (
             <button
-              onClick={() => window.history.back()}
+              onClick={() => router.push("/")}
               className="text-white mr-2 text-sm"
             >
               <ArrowLeftCircleIcon />
