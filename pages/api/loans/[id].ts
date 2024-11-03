@@ -1,6 +1,7 @@
 // src/pages/api/loans/[id].ts
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
+import { fetchLoanDetails } from "../../../src/utils/api";
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,7 +23,7 @@ export default async function handler(
 }
 
 async function getLoan(req: NextApiRequest, res: NextApiResponse, id: string) {
-  const loan = await prisma.loan.findUnique({ where: { id: Number(id) } });
+  const loan = await fetchLoanDetails(Number(id));
   if (loan) {
     res.status(200).json(loan);
   } else {
@@ -69,12 +70,12 @@ async function updateLoan(
       where: { id: Number(id) },
       data: {
         loanType,
-        loanAmount,
+        loanAmount: Number(loanAmount),
         status,
         paid,
         partnerId,
         companyId,
-        loanAdminId
+        loanAdminId: loanAdminId ? loanAdminId : null,
       },
     });
 

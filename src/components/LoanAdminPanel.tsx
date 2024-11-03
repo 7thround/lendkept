@@ -7,7 +7,6 @@ const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
       ...loan,
       loanAdminId,
     };
-    console.log("Payload:", payload);
     const response = await fetch(`/api/loans/${loan.id}`, {
       method: "PUT",
       headers: {
@@ -17,12 +16,17 @@ const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
     });
 
     if (response.ok) {
-      sendEmail(
-        availableLoanAdmins.find((admin) => admin.id === loanAdminId).email,
-        "You have been assigned a new loan",
-        "loanOfficerAdded",
-        { loan }
+      const newAdmin = availableLoanAdmins.find(
+        (admin) => admin.id === loanAdminId
       );
+      if (newAdmin) {
+        await sendEmail(
+          availableLoanAdmins.find((admin) => admin.id === loanAdminId).email,
+          "You have been assigned a new loan",
+          "loanOfficerAdded",
+          { loan }
+        );
+      }
       const updatedLoan = await response.json();
       console.log("Loan updated:", updatedLoan);
       window.location.reload();

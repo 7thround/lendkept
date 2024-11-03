@@ -30,3 +30,9 @@ export const Column = ({
     <div className={`col-span-12 md:col-span-${col} space-y-4`}>{children}</div>
   </>
 );
+
+export const FullScreenLoader = () => (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-10">
+    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#e74949]"></div>
+  </div>
+);

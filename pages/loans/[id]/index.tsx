@@ -2,37 +2,30 @@ import { PencilSquareIcon } from "@heroicons/react/20/solid";
 import React, { useState } from "react";
 import {
   Column,
+  FullScreenLoader,
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
 import prisma from "../../../lib/prisma";
-import { Company, LoanType, Note, Partner, User } from "@prisma/client";
+import { LoanType, User } from "@prisma/client";
 import { getUser } from "../..";
 import cookie from "cookie";
-import { LoanWithAddress } from "../../../types";
+import { PreLoadedLoanData } from "../../../types";
 import LoanAdminPanel from "../../../src/components/LoanAdminPanel";
 import LoanTimeline from "../../../src/components/LoanTimeline";
 import NotesSection from "../../../src/components/NotesSection";
 import UpdateStatusPanel from "../../../src/components/UpdateStatusPanel";
+import { fetchLoanDetails } from "../../../src/utils/api";
+import { useRouter } from "next/router";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
 
-  const loan = await prisma.loan.findUnique({
-    where: { id: Number(id) },
-    include: {
-      address: true,
-      borrowers: true,
-    },
-  });
-
-  const serializedLoan = {
-    ...loan,
-    borrowers: loan.borrowers.map((borrower) => ({
-      ...borrower,
-      createdAt: borrower.createdAt.toISOString(),
-    })),
-  };
-
+  const loan = await fetchLoanDetails(Number(id));
+  if (!loan) {
+    return {
+      notFound: true,
+    };
+  }
   const availableLoanAdmins = await prisma.user.findMany({
     where: {
       companyId: loan.companyId,
@@ -43,33 +36,6 @@ export const getServerSideProps = async (context) => {
       id: true,
       email: true,
     },
-  });
-  const notes = await prisma.note.findMany({
-    where: { loanId: Number(id) },
-    orderBy: { createdAt: "asc" },
-    include: {
-      sender: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
-
-  // Convert the Date object to a string
-  const serializedNotes = notes.map((note) => ({
-    ...note,
-    createdAt: note.createdAt.toISOString(),
-  }));
-
-  let partner = null;
-  if (loan.partnerId) {
-    partner = await prisma.partner.findUnique({
-      where: { id: loan.partnerId },
-    });
-  }
-  const company = await prisma.company.findUnique({
-    where: { id: loan.companyId },
   });
 
   const { req } = context;
@@ -88,10 +54,7 @@ export const getServerSideProps = async (context) => {
 
   return {
     props: {
-      loan: serializedLoan,
-      notes: serializedNotes,
-      partner,
-      company,
+      preloadedLoan: JSON.parse(JSON.stringify(loan)),
       user: await getUser(token),
       availableLoanAdmins,
     },
@@ -99,39 +62,147 @@ export const getServerSideProps = async (context) => {
 };
 
 const LoanPage = ({
-  loan,
-  notes,
-  partner,
-  company,
+  preloadedLoan,
   user,
   availableLoanAdmins,
 }: {
-  loan: LoanWithAddress;
-  notes: Note[];
-  partner: Partner;
-  company: Company;
+  preloadedLoan: PreLoadedLoanData;
   user: User;
   availableLoanAdmins: User[];
 }) => {
+  const router = useRouter();
+  const { partner, company } = preloadedLoan;
+  const [loan, setLoan] = useState<PreLoadedLoanData>(preloadedLoan);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editSection, setEditSection] = useState("");
   const [formData, setFormData] = useState<any>({});
-  const addNote = async (note) => {
-    const response = await fetch(`/api/notes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(note),
-    });
-
+  const [loading, setLoading] = useState(false);
+  const fetchLoan = async () => {
+    const response = await fetch(`/api/loans/${loan.id}`);
     if (response.ok) {
-      const newNote = await response.json();
-      window.location.reload();
-      console.log("Note added:", newNote);
+      const updatedLoan = await response.json();
+      setLoan(updatedLoan);
+    }
+  };
+  const deleteLoan = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        console.log("Loan deleted");
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Error deleting loan:", error);
+    }
+    setLoading(false);
+  };
+  const addNote = async (note: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(note),
+      });
+
+      if (response.ok) {
+        const newNote = await response.json();
+        console.log("Note added:", newNote);
+        await fetchLoan();
+      }
+    } catch (error) {
+      console.error("Error adding note:", error);
+    }
+    setLoading(false);
+  };
+  const deleteNote = async (noteId) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        console.log("Note deleted");
+        await fetchLoan();
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+    setLoading(false);
+  };
+  const handleUpdateLoan = async () => {
+    console.log("Updating loan...");
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          addressId: loan.addressId,
+          ...formData,
+        }),
+      });
+
+      if (response.ok) {
+        const updatedLoan = await response.json();
+        console.log("Loan updated:", updatedLoan);
+        await fetchLoan();
+      }
+    } catch (error) {
+      console.error("Error updating loan:", error);
+    } finally {
+      setLoading(false);
+      setIsModalOpen(false);
+    }
+  };
+  const handleUpdateBorrowers = async (borrower: "borrower" | "coBorrower") => {
+    console.log("Updating borrower...");
+    setLoading(true);
+    const borrowerId = loan.borrowers[borrower === "borrower" ? 0 : 1].id;
+    const borrowerData = {
+      firstName: formData[`${borrower}FirstName`],
+      lastName: formData[`${borrower}LastName`],
+      email: formData[`${borrower}Email`],
+      phone: formData[`${borrower}Phone`],
+      employer: formData[`${borrower}Employer`],
+      position: formData[`${borrower}Position`],
+      income: formData[`${borrower}Income`],
+      credit: formData[`${borrower}Credit`],
+    };
+    try {
+      const response = await fetch(`/api/borrowers/${borrowerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(borrowerData),
+      });
+
+      if (response.ok) {
+        const updatedBorrower = await response.json();
+        console.log("Borrower updated:", updatedBorrower);
+        await fetchLoan();
+      } else {
+        console.error("Failed to update borrower");
+      }
+    } catch (error) {
+      console.error("Error updating borrower:", error);
+    } finally {
+      setLoading(false);
+      setIsModalOpen(false);
     }
   };
   const updateStatus = async (newStatus) => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/loans/${loan.id}`, {
         method: "PUT",
@@ -147,13 +218,14 @@ const LoanPage = ({
       if (response.ok) {
         const updatedLoan = await response.json();
         console.log("Status updated:", updatedLoan);
-        window.location.reload();
+        await fetchLoan();
       } else {
         console.error("Failed to update status");
       }
     } catch (error) {
       console.error("Error updating status:", error);
     }
+    setLoading(false);
   };
   const openModal = (section) => {
     setEditSection(section);
@@ -193,71 +265,55 @@ const LoanPage = ({
     console.log(e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  const handleUpdateLoan = async () => {
-    try {
-      const response = await fetch(`/api/loans/${loan.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          addressId: loan.addressId,
-          ...formData,
-        }),
-      });
-
-      if (response.ok) {
-        const updatedLoan = await response.json();
-        console.log("Loan updated:", updatedLoan);
-        window.location.reload();
-      } else {
-        console.error("Failed to update loan");
-      }
-    } catch (error) {
-      console.error("Error updating loan:", error);
-    } finally {
-      setIsModalOpen(false);
-    }
-  };
-
-  const handleUpdateBorrowers = async (borrower: "borrower" | "coBorrower") => {
-    const borrowerId = loan.borrowers[borrower === "borrower" ? 0 : 1].id;
-    const borrowerData = {
-      firstName: formData[`${borrower}FirstName`],
-      lastName: formData[`${borrower}LastName`],
-      email: formData[`${borrower}Email`],
-      phone: formData[`${borrower}Phone`],
-      employer: formData[`${borrower}Employer`],
-      position: formData[`${borrower}Position`],
-      income: formData[`${borrower}Income`],
-      credit: formData[`${borrower}Credit`],
-    };
-    try {
-      const response = await fetch(`/api/borrowers/${borrowerId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(borrowerData),
-      });
-
-      if (response.ok) {
-        const updatedBorrower = await response.json();
-        console.log("Borrower updated:", updatedBorrower);
-        window.location.reload();
-      } else {
-        console.error("Failed to update borrower");
-      }
-    } catch (error) {
-      console.error("Error updating borrower:", error);
-    } finally {
-      setIsModalOpen(false);
-    }
-  };
   const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/loans/${loan.id}/read_only?access_code=${loan.accessCode}`;
   const isAdmin = user.role === "COMPANY" || user.role === "LOAN_ADMIN";
+
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isModalOpen && e.key === "Enter") {
+        editSection === "borrower" || editSection === "coBorrower"
+          ? handleUpdateBorrowers(editSection)
+          : handleUpdateLoan();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isModalOpen, editSection, formData]);
+
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const ConfirmDeleteLoan = () => {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-4 rounded-lg shadow-lg w-96">
+          <h2 className="text-lg font-semibold mb-4">Confirm Delete</h2>
+          <p className="text-gray-700">
+            Are you sure you want to delete this loan?
+          </p>
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={deleteLoan}
+              className="bg-[#e74949] text-white py-2 px-4 rounded-lg disabled:opacity-70 mr-2 text-sm"
+              disabled={loading}
+            >
+              Delete Loan
+            </button>
+            <button
+              onClick={() => setShowConfirmDelete(false)}
+              className="bg-gray-300 text-black py-2 px-4 rounded-lg text-sm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
+      {(!loan || loading) && <FullScreenLoader />}
       <PageContainer>
         <Column col={isAdmin ? 8 : 12}>
           <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
@@ -271,12 +327,11 @@ const LoanPage = ({
                   navigator.clipboard.writeText(loanLink);
                   (e.target as HTMLButtonElement).textContent = "Copied!";
                   setTimeout(() => {
-                    (e.target as HTMLButtonElement).textContent =
-                      "Share Loan Link";
+                    (e.target as HTMLButtonElement).textContent = "Client Link";
                   }, 1000);
                 }}
               >
-                Share Loan Link
+                Client Link
               </button>
             </div>
             <div className="text-center font-semibold pb-2">Loan Timeline</div>
@@ -321,9 +376,11 @@ const LoanPage = ({
                             `${index === 0 ? "borrower" : "coBorrower"}`
                           )
                         }
-                        className="text-[#e74949]"
+                        className="text-[#e74949] mt-2"
                       >
-                        <PencilSquareIcon className="h-5 w-5" />
+                        <div className="flex items-center gap-1">
+                          Edit <PencilSquareIcon className="h-5 w-5" />
+                        </div>
                       </button>
                     </div>
                   ))}
@@ -404,6 +461,16 @@ const LoanPage = ({
                 </p>
               </div>
             </div>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowConfirmDelete(true)}
+                className="text-[#e74949] py-2 px-4 rounded-lg disabled:opacity-70 text-sm hover:underline"
+                disabled={loading}
+              >
+                Delete Loan
+              </button>
+              {showConfirmDelete && <ConfirmDeleteLoan />}
+            </div>
           </div>
         </Column>
         {isAdmin && (
@@ -445,9 +512,10 @@ const LoanPage = ({
         )}
         <Column col={12}>
           <NotesSection
-            notes={notes}
+            notes={loan.notes}
             loanId={loan.id}
             onAddNote={addNote}
+            onDeleteNote={deleteNote}
             sender={user}
           />
         </Column>
@@ -703,9 +771,12 @@ const LoanPage = ({
                     ? handleUpdateBorrowers(editSection)
                     : handleUpdateLoan()
                 }
-                className="bg-[#e74949] text-white py-2 px-4 rounded-lg"
+                className="bg-[#e74949] text-white py-2 px-4 rounded-lg disabled:opacity-70"
+                disabled={loading}
               >
-                Save
+                {editSection === "borrower" || editSection === "coBorrower"
+                  ? "Update Borrower"
+                  : "Update Loan"}
               </button>
             </div>
           </div>

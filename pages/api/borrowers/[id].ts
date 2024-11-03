@@ -42,7 +42,7 @@ async function updateBorrower(
         phone,
         employer,
         position,
-        income,
+        income: Number(income),
         credit,
       },
     });

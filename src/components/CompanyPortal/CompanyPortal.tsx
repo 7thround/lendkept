@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
+import { EyeIcon, LinkIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/router";
-import { Column, PageContainer } from "../Layout/PageParts";
+import { Column, FullScreenLoader, PageContainer } from "../Layout/PageParts";
 import { Company, Partner, User } from "@prisma/client";
 import { DEFAULT_PASSWORD, LoanStatusLabels } from "../../constants";
 import axios from "axios";
+import { copyToClipboard } from "../../utils";
 
 const ConfirmationModal = ({ isOpen, onClose, onConfirm, message }) => {
   if (!isOpen) return null;
@@ -97,12 +98,12 @@ const LoanAdminsPanel = ({ company, loanAdmins }) => {
   return (
     <div className="bg-white shadow rounded-lg mt-4">
       <div className="flex items-center justify-between mb-2 pt-2 px-4">
-        <h2 className="text-xl font-semibold text-gray-900">Loan Admins</h2>
+        <h2 className="text-xl font-semibold text-gray-900">Loan Officers</h2>
         <button
           className="bg-[#e74949] text-white my-1 py-1 px-3 rounded-lg text-sm"
           onClick={() => setModalOpen(true)}
         >
-          New Admin
+          New Officer
         </button>
       </div>
       <ul className="divide-y divide-gray-200 px-4">
@@ -249,8 +250,10 @@ const CompanyPortal = ({
   const [sortColumn, setSortColumn] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
   const [loans, setLoans] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchLoans = async () => {
+    setLoading(true);
     try {
       const response = await fetch(
         `/api/loans?search=${search}&status=${statusFilter}&referredBy=${referredByFilter}&sortColumn=${sortColumn}&sortDirection=${sortDirection}`
@@ -259,6 +262,8 @@ const CompanyPortal = ({
       setLoans(data);
     } catch (error) {
       console.error("Failed to fetch loans:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -266,8 +271,20 @@ const CompanyPortal = ({
     fetchLoans();
   }, [search, statusFilter, referredByFilter, sortColumn, sortDirection]);
 
+  const [copyPartnerText, setCopyPartnerText] = useState<String | JSX.Element>(
+    "Partner Link"
+  );
+  const handleCopyPartnerLink = () => {
+    copyToClipboard(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register`
+    );
+    setCopyPartnerText("Link Copied!");
+    setTimeout(() => setCopyPartnerText("Partner Link"), 300);
+  };
+
   return (
     <PageContainer>
+      {loading && <FullScreenLoader />}
       <Column col={8}>
         {/* My Loans Panel */}
         <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col flex-grow">
@@ -355,7 +372,10 @@ const CompanyPortal = ({
                       <td className="text-center py-2 px-4 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => router.push(`/loans/${loan.id}`)}
+                            onClick={() => {
+                              setLoading(true);
+                              router.push(`/loans/${loan.id}`);
+                            }}
                           >
                             <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
                           </button>
@@ -392,12 +412,14 @@ const CompanyPortal = ({
         <div className="bg-white shadow rounded-lg overflow-hidden flex flex-col flex-grow">
           <div className="flex items-center justify-between mb-2 px-4 pt-2">
             <h2 className="text-xl font-semibold text-gray-900">Partners</h2>
-            <button
-              className="bg-[#e74949] text-white my-1 py-1 px-3 rounded-lg text-sm"
-              onClick={() => router.push(`${company.slug}/register`)}
-            >
-              New Partner
-            </button>
+            <div>
+              <button
+                onClick={handleCopyPartnerLink}
+                className="bg-[#e74949] text-white my-1 py-1 px-3 rounded-lg text-sm"
+              >
+                {copyPartnerText}
+              </button>
+            </div>
           </div>
           <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
             <table className="min-w-full bg-white">
