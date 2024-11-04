@@ -5,6 +5,7 @@ import LoanSubmitted from "./LoanSubmitted";
 import NewLoanOfficer from "./NewLoanOfficer";
 import NewNote from "./NewNote";
 import NewPartner from "./NewPartner";
+import ResetPassword from "./ResetPassword";
 import WelcomePartner from "./WelcomePartner";
 
 export interface EmailTemplatesInterface {
@@ -16,15 +17,17 @@ export interface EmailTemplatesInterface {
   WelcomePartner: typeof WelcomePartner;
   NewPartner: typeof NewPartner;
   NewLoanOfficer: typeof NewLoanOfficer;
+  ResetPassword: typeof ResetPassword;
 }
 
 export const EmailTemplates = {
-  LoanStatusUpdated: LoanStatusUpdated,
-  LoanFunded: LoanFunded,
-  LoanSubmitted: LoanSubmitted,
-  LoanOfficerAdded: LoanOfficerAdded,
-  NewNote: NewNote,
-  WelcomePartner: WelcomePartner,
-  NewPartner: NewPartner,
-  NewLoanOfficer: NewLoanOfficer,
+  LoanStatusUpdated,
+  LoanFunded,
+  LoanSubmitted,
+  LoanOfficerAdded,
+  NewNote,
+  WelcomePartner,
+  NewPartner,
+  NewLoanOfficer,
+  ResetPassword,
 };

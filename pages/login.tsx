@@ -1,19 +1,22 @@
-import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/router";
+import { useState } from "react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setError("");
     e.preventDefault();
     try {
       await axios.post("/api/auth/login", { email, password });
       router.push("/");
     } catch (error) {
       console.error(error);
+      setError("Invalid email or password");
     }
   };
 
@@ -21,7 +24,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center bg-gray-100 mt-24">
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-8 rounded shadow-md space-y-4"
+        className="bg-white p-8 rounded shadow-md space-y-4 w-96"
       >
         <h2 className="text-2xl font-bold mb-8 text-center">Login</h2>
         <div>
@@ -52,6 +55,10 @@ export default function LoginPage() {
         >
           Login
         </button>
+        <a href="/forgot-password" className="block mt-2 text-center">
+          Forgot your password?
+        </a>
+        {error && <p className="text-[#e74949] text-center">{error}</p>}
       </form>
     </div>
   );
