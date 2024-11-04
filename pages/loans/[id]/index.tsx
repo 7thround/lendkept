@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { getUser } from "../..";
 import prisma from "../../../lib/prisma";
 import ConfirmationModal from "../../../src/components/common/ConfirmationModal";
+import LoanStatusLabel from "../../../src/components/common/LoanStatusLabel";
 import {
   Column,
   FullScreenLoader,
@@ -16,6 +17,7 @@ import LoanDetails from "../../../src/components/LoanDetails";
 import LoanTimeline from "../../../src/components/LoanTimeline";
 import NotesSection from "../../../src/components/NotesSection";
 import UpdateStatusPanel from "../../../src/components/UpdateStatusPanel";
+import { LoanTypeLabels } from "../../../src/constants";
 import { fetchLoanDetails } from "../../../src/utils/api";
 import { PreLoadedLoanData } from "../../../types";
 
@@ -308,11 +310,11 @@ const LoanPage = ({
         <Column col={isAdmin ? 8 : 12}>
           <div className="bg-white shadow rounded-lg p-4 flex-grow">
             <div className="flex justify-between items-center ">
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-lg font-semibold text-gray-900">
                 Loan Details
               </h1>
               <button
-                className="px-2 py-1 border border-[#e74949] text-[#e74949] rounded-lg flex items-center space-x-2 text-sm hover:brightness-110"
+                className="px-2 py-1 border border-[#e74949] text-[#e74949] rounded flex items-center space-x-2 text-sm hover:brightness-110"
                 onClick={(e) => {
                   navigator.clipboard.writeText(loanLink);
                   (e.target as HTMLButtonElement).textContent = "Copied!";
@@ -422,13 +424,14 @@ const LoanPage = ({
                   )}
                 </h2>
                 <p>
-                  <strong>Type:</strong> {loan.loanType}
+                  <strong>Type:</strong> {LoanTypeLabels[loan.loanType]}
                 </p>
                 <p>
                   <strong>Amount:</strong> ${loan.loanAmount.toLocaleString()}
                 </p>
                 <p>
-                  <strong>Status:</strong> {loan.status}
+                  <strong>Status:</strong>{" "}
+                  <LoanStatusLabel status={loan.status} />
                 </p>
                 <p>
                   <strong>Paid:</strong> {loan.paid ? "Yes" : "No"}

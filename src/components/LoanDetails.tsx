@@ -1,4 +1,5 @@
-import { LoanType } from "@prisma/client";
+import { LoanTypeLabels } from "../constants";
+import LoanStatusLabel from "./common/LoanStatusLabel";
 
 const LoanDetails = ({ loan, assignedOfficer }) => (
   <>
@@ -16,10 +17,10 @@ const LoanDetails = ({ loan, assignedOfficer }) => (
       <strong>Address:</strong> {`${loan.address.addressLine1}`}
     </p>
     <p>
-      <strong>Status:</strong> {loan.status}
+      <strong>Status:</strong> <LoanStatusLabel status={loan.status} />
     </p>
     <p>
-      <strong>Type:</strong> {LoanType[loan.loanType]}
+      <strong>Type:</strong> {LoanTypeLabels[loan.loanType]}
     </p>
     <p>
       <strong>Amount:</strong> ${loan.loanAmount.toLocaleString()}

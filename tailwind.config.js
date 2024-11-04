@@ -12,6 +12,7 @@ module.exports = {
   safelist: [
     {
       pattern: /^(col-span|grid-cols)-\d+$/,
+      pattern: /^(bg-)?(gray|blue|green|yellow|red)-\d{3}$/,
     },
   ],
 };

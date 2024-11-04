@@ -1,4 +1,3 @@
-import { EyeIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { Partner } from "@prisma/client";
 import router from "next/router";
 import { useEffect, useState } from "react";
@@ -117,15 +116,19 @@ const LoansTable = ({
                 <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Referred By
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {loans.length ? (
                 loans.map((loan) => (
-                  <tr key={loan.id}>
+                  <tr
+                    key={loan.id}
+                    onClick={() => {
+                      setLoading(true);
+                      router.push(`/loans/${loan.id}`);
+                    }}
+                    className="cursor-pointer hover:bg-gray-50"
+                  >
                     <td className="py-3 px-4 whitespace-nowrap">
                       {loan.address.addressLine1}
                     </td>
@@ -138,23 +141,6 @@ const LoansTable = ({
                     <td className="py-2 px-4 whitespace-nowrap text-center">
                       {/* @ts-ignore */}
                       {loan.partner ? loan.partner.name : "-"}
-                    </td>
-                    <td className="text-center py-2 px-4 whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => {
-                            setLoading(true);
-                            router.push(`/loans/${loan.id}`);
-                          }}
-                        >
-                          <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                        </button>
-                        {confirmDeleteLoan && (
-                          <button onClick={() => confirmDeleteLoan(loan.id)}>
-                            <TrashIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                          </button>
-                        )}
-                      </div>
                     </td>
                   </tr>
                 ))

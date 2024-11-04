@@ -3,12 +3,14 @@ import cookie from "cookie";
 import { useEffect, useState } from "react";
 import { getUser } from "../..";
 import prisma from "../../../lib/prisma";
+import LoanStatusLabel from "../../../src/components/common/LoanStatusLabel";
 import {
   Column,
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
 import LoanDetails from "../../../src/components/LoanDetails";
 import LoanTimeline from "../../../src/components/LoanTimeline";
+import { LoanTypeLabels } from "../../../src/constants";
 import { LoanWithAddress } from "../../../types";
 
 export const getServerSideProps = async (context) => {
@@ -100,7 +102,7 @@ const LoanPage = ({
       <PageContainer>
         <Column col={12}>
           <div className="bg-white shadow rounded-lg p-4 flex-grow">
-            <h1 className="text-xl font-semibold text-gray-900 mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 mb-4">
               Loan Details
             </h1>
             <p className="text-gray-700">Loan not found</p>
@@ -115,7 +117,7 @@ const LoanPage = ({
       <PageContainer>
         <Column col={12}>
           <div className="bg-white shadow rounded-lg p-4 items-center text-center">
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            <h1 className="text-lg font-semibold text-gray-900 mb-2">
               Loan Details
             </h1>
             <p className="text-gray-700">
@@ -212,16 +214,14 @@ const LoanPage = ({
                   Loan Details
                 </h2>
                 <p>
-                  <strong>Type:</strong> {loan.loanType}
+                  <strong>Type:</strong> {LoanTypeLabels[loan.loanType]}
                 </p>
                 <p>
                   <strong>Amount:</strong> ${loan.loanAmount.toLocaleString()}
                 </p>
                 <p>
-                  <strong>Status:</strong> {loan.status}
-                </p>
-                <p>
-                  <strong>Paid:</strong> {loan.paid ? "Yes" : "No"}
+                  <strong>Status:</strong>{" "}
+                  <LoanStatusLabel status={loan.status} />
                 </p>
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
