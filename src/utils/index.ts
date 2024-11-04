@@ -29,12 +29,14 @@ export const formatDateWithTime = (dateString: string | Date): string => {
   return `${month}/${day}/${year} ${formattedHours}:${minutes} ${ampm}`;
 };
 
-export const sendEmail = async (
+interface SendEmailProps {
   to: string | string[],
   subject: string,
   template: keyof EmailTemplatesInterface,
   payload: { [key: string]: any }
-) => {
+}
+
+export const sendEmail = async ({ to, subject, template, payload }: SendEmailProps) => {
   try {
     const response = await fetch("/api/send", {
       method: "POST",

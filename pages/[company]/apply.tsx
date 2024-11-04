@@ -1,8 +1,9 @@
+import { Company, Partner } from "@prisma/client";
+import Head from "next/head";
 import { useState } from "react";
 import prisma from "../../lib/prisma";
-import { Company, Partner } from "@prisma/client";
+import { sendEmail } from "../../src/utils";
 import LoanApplicationForm from "./LoanApplicationForm";
-import Head from "next/head";
 
 export const getServerSideProps = async (context) => {
   const { params } = context;
@@ -85,6 +86,28 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
     });
 
     if (response.ok) {
+      await sendEmail({
+        to: company.email,
+        subject: "New Loan Application",
+        template: "LoanSubmitted",
+        payload: {
+          company,
+          loan: formData,
+        },
+      });
+      console.log(`Email sent to ${company.email}`);
+      if (partner) {
+        await sendEmail({
+          to: partner.email,
+          subject: "New Loan Application",
+          template: "LoanSubmitted",
+          payload: {
+            company,
+            loan: formData,
+          },
+        });
+        console.log(`Email sent to ${partner.email}`);
+      }
       alert("Mortgage application submitted successfully!");
       setFormData({});
       setLoanSubmitted(true);

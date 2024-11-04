@@ -1,3 +1,4 @@
+import { User } from "@prisma/client";
 import { sendEmail } from "../utils";
 
 const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
@@ -20,12 +21,15 @@ const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
         (admin) => admin.id === loanAdminId
       );
       if (newAdmin) {
-        await sendEmail(
-          availableLoanAdmins.find((admin) => admin.id === loanAdminId).email,
-          "You have been assigned a new loan",
-          "loanOfficerAdded",
-          { loan }
-        );
+        await sendEmail({
+          to: availableLoanAdmins.find(
+            (admin: User) => admin.id === loanAdminId
+          ).email,
+          subject: "You have been assigned a new loan",
+          template: "LoanOfficerAdded",
+          payload: { loan },
+        });
+        console.log(`Email sent to ${newAdmin.email}`);
       }
       const updatedLoan = await response.json();
       console.log("Loan updated:", updatedLoan);

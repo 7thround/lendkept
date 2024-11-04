@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/20/solid";
+import { Partner } from "@prisma/client";
 import axios from "axios";
 import { useRouter } from "next/router";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/20/solid";
+import { useState } from "react";
 import InputMask from "react-input-mask";
-import { Partner } from "@prisma/client";
 import prisma from "../../lib/prisma";
+import { sendEmail } from "../../src/utils";
 
 export const getServerSideProps = async (context) => {
   const { params } = context;
@@ -79,6 +80,27 @@ function RegisterPage({ partner, company }) {
     try {
       const res = await axios.post("/api/partners", data);
       if (res.status === 201) {
+        await sendEmail({
+          to: res.data.email,
+          subject: "Welcome to the team!",
+          template: "WelcomePartner",
+          payload: { partner: res.data },
+        });
+        console.log(`Email sent to ${res.data.email}`);
+        await sendEmail({
+          to: company.email,
+          subject: `${name}, has joined LendKept!`,
+          template: "NewPartner",
+          payload: { partner },
+        });
+        console.log(`Email sent to ${company.email}`);
+        await sendEmail({
+          to: partner.email,
+          subject: `You have a new referral!`,
+          template: "NewPartner",
+          payload: { partner },
+        });
+        console.log(`Email sent to ${partner.email}`);
         alert("Registration successful. Please login.");
         router.push("/");
       } else {

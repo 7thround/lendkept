@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useState } from "react";
 import { DEFAULT_PASSWORD } from "../constants";
+import { sendEmail } from "../utils";
 import ConfirmationModal from "./common/ConfirmationModal";
 
 const LoanAdminsPanel = ({ company, loanAdmins }) => {
@@ -32,6 +33,13 @@ const LoanAdminsPanel = ({ company, loanAdmins }) => {
       if (response.status === 201) {
         console.log("User created successfully:", response.data);
         alert("User created successfully");
+        await sendEmail({
+          to: userEmail,
+          subject: "Welcome to our loan service!",
+          template: "NewLoanOfficer",
+          payload: {},
+        });
+        console.log(`Email sent to ${userEmail}`);
         window.location.reload();
       }
     } catch (error) {

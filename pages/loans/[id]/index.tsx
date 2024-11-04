@@ -1,5 +1,5 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
-import { LoanType, User } from "@prisma/client";
+import { Company, LoanType, Partner, User } from "@prisma/client";
 import cookie from "cookie";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
@@ -18,6 +18,7 @@ import LoanTimeline from "../../../src/components/LoanTimeline";
 import NotesSection from "../../../src/components/NotesSection";
 import UpdateStatusPanel from "../../../src/components/UpdateStatusPanel";
 import { LoanTypeLabels } from "../../../src/constants";
+import { sendEmail } from "../../../src/utils";
 import { fetchLoanDetails } from "../../../src/utils/api";
 import { PreLoadedLoanData } from "../../../types";
 
@@ -106,7 +107,12 @@ const LoanPage = ({
     }
     setLoading(false);
   };
-  const addNote = async (note: string) => {
+  const addNote = async (note: {
+    text: string;
+    loanId: string;
+    senderId: string;
+    createdAt: Date;
+  }) => {
     setLoading(true);
     try {
       const response = await fetch(`/api/notes`, {
@@ -119,6 +125,23 @@ const LoanPage = ({
 
       if (response.ok) {
         const newNote = await response.json();
+        const recipientList = [
+          company as Company,
+          partner as Partner,
+          assignedOfficer,
+        ];
+        const sendList = recipientList.filter(
+          (recipient) => note.senderId !== recipient.id
+        );
+        sendList.forEach(async (recipient) => {
+          await sendEmail({
+            to: recipient.email,
+            subject: "New Note Added",
+            template: "NewNote",
+            payload: { note: newNote, loan },
+          });
+          console.log(`Email sent to ${recipient.email}`);
+        });
         console.log("Note added:", newNote);
         await fetchLoan();
       }
@@ -223,6 +246,44 @@ const LoanPage = ({
 
       if (response.ok) {
         const updatedLoan = await response.json();
+        if (updatedLoan.status === "LOAN_FUNDED") {
+          await sendEmail({
+            to: partner.email,
+            subject: "Your Loan Has Been Funded",
+            template: "LoanFunded",
+            payload: {},
+          });
+          console.log(`Email sent to ${partner.email}`);
+          await sendEmail({
+            to: company.email,
+            subject: "A Loan Has Been Funded",
+            template: "LoanFunded",
+            payload: {},
+          });
+          console.log(`Email sent to ${company.email}`);
+        } else {
+          await sendEmail({
+            to: partner.email,
+            subject: "Loan Status Update",
+            template: "LoanStatusUpdated",
+            payload: {},
+          });
+          console.log(`Email sent to ${partner.email}`);
+          await sendEmail({
+            to: company.email,
+            subject: "Loan Status Update",
+            template: "LoanStatusUpdated",
+            payload: {},
+          });
+          console.log(`Email sent to ${company.email}`);
+        }
+        await sendEmail({
+          to: updatedLoan.borrowers[0].email,
+          subject: "Loan Status Update",
+          template: "LoanStatusUpdated",
+          payload: {},
+        });
+        console.log(`Email sent to ${updatedLoan.borrowers[0].email}`);
         console.log("Status updated:", updatedLoan);
         await fetchLoan();
       } else {
