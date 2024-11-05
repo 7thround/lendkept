@@ -23,12 +23,13 @@ model Partner {
   address            Address?  @relation(fields: [addressId], references: [id])
   addressId          String?   @unique 
   user               User?
+  profileImage       Bytes?
 }
 
 model Company {
   id           String   @default(uuid()) @id
   name         String
-  logo         String?
+  logo         Bytes?
   phone        String
   partners     Partner[]
   loans        Loan[]

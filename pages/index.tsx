@@ -1,13 +1,13 @@
-import React from "react";
 import { Company, Partner, Role, User } from "@prisma/client";
-import jwt from "jsonwebtoken";
 import cookie from "cookie";
-import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
-import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
-import prisma from "../lib/prisma";
+import jwt from "jsonwebtoken";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
-import { LoanWithAddress } from "../types";
+import React from "react";
+import prisma from "../lib/prisma";
+import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
 import LoanAdminPortal from "../src/components/LoanAdminPortal/LoanAdminPortal";
+import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
+import { LoanWithAddress } from "../types";
 
 export const getUser = async (token) => {
   if (!token) {
@@ -22,6 +22,10 @@ export const getUser = async (token) => {
   const user = await prisma.user.findUnique({
     where: {
       id: decoded.userId,
+    },
+    include: {
+      company: true,
+      partner: true,
     },
   });
 
@@ -114,10 +118,10 @@ export const getServerSideProps: GetServerSideProps = async (
       return {
         props: {
           role,
-          partner: partnerData,
-          company,
+          partner: JSON.parse(JSON.stringify(partnerData)),
+          company: JSON.parse(JSON.stringify(company)),
           loans: [...partnerLoans],
-          partners: referredPartners,
+          partners: JSON.parse(JSON.stringify(referredPartners)),
           referredLoans,
           user,
         },
@@ -148,7 +152,7 @@ export const getServerSideProps: GetServerSideProps = async (
 
       return {
         props: {
-          company,
+          company: JSON.parse(JSON.stringify(company)),
           loans,
           user,
           role,
@@ -167,6 +171,7 @@ export const getServerSideProps: GetServerSideProps = async (
           companyId: company.id,
         },
       });
+
       const loanAdmins = await prisma.user.findMany({
         where: {
           companyId: company.id,
@@ -191,9 +196,9 @@ export const getServerSideProps: GetServerSideProps = async (
       return {
         props: {
           role,
-          company,
+          company: JSON.parse(JSON.stringify(company)),
           loans,
-          partners,
+          partners: JSON.parse(JSON.stringify(partners)),
           user,
           loanAdmins,
         },

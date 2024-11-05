@@ -73,7 +73,7 @@ const LoansTable = ({
                 </option>
               ))}
             </select>
-            {!!partners.length && (
+            {!!partners?.length && (
               <select
                 className="border border-gray-300 rounded-lg p-1 px-3 ml-2"
                 value={referredByFilter}

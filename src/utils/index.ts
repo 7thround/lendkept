@@ -50,3 +50,26 @@ export const sendEmail = async ({ to, subject, template, payload }: SendEmailPro
     console.error("Error sending email:", error);
   }
 };
+
+export const resizeImage = (file, maxWidth, maxHeight, callback) => {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      callback(canvas.toDataURL("image/jpeg").split(",")[1]); // Get base64 string
+    };
+    if (typeof e.target.result === "string") {
+      img.src = e.target.result;
+    }
+  };
+  reader.readAsDataURL(file);
+};

@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { useState } from "react";
 import InputMask from "react-input-mask";
 import prisma from "../../lib/prisma";
-import { sendEmail } from "../../src/utils";
+import { resizeImage, sendEmail } from "../../src/utils";
 
 export const getServerSideProps = async (context) => {
   const { params } = context;
@@ -58,7 +58,16 @@ function RegisterPage({ partner, company }) {
   const [zip, setZip] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const [success, setSuccess] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      resizeImage(file, 100, 100, (resizedBase64) => {
+        setProfileImage(resizedBase64);
+      });
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,6 +84,7 @@ function RegisterPage({ partner, company }) {
       city,
       state,
       zip,
+      profileImage,
     };
 
     try {
@@ -222,6 +232,12 @@ function RegisterPage({ partner, company }) {
           )}
         </button>
       </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="w-full p-2 border rounded"
+      />
       <button
         type="submit"
         style={{ backgroundColor: company.primaryColor }}

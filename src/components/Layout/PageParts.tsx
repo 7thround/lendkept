@@ -36,3 +36,11 @@ export const FullScreenLoader = () => (
     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#e74949]"></div>
   </div>
 );
+
+export const ProfileImage = ({ src }: { src: string }) => (
+  <img
+    src={`data:image/jpeg;base64,${Buffer.from(src).toString("base64")}`}
+    alt="Profile"
+    className="rounded-full h-10 w-10 object-cover"
+  />
+);

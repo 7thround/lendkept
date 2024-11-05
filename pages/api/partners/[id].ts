@@ -41,19 +41,31 @@ const getPartner = async (
   res.status(200).json(partner);
 };
 
-const updatePartner = async (
-  req: NextApiRequest,
-  res: NextApiResponse,
-  id: string
-) => {
-  const { name } = req.body;
+const updatePartner = async (req: NextApiRequest, res: NextApiResponse, id: string) => {
+  const { name, phone, profileImage, address } = req.body;
 
-  const partner = await prisma.partner.update({
-    where: { id },
-    data: { name },
-  });
-
-  res.status(200).json(partner);
+  try {
+    const partner = await prisma.partner.update({
+      where: { id: String(id) },
+      data: {
+        name,
+        phone,
+        profileImage,
+        address: {
+          update: {
+            addressLine1: address.addressLine1,
+            addressLine2: address.addressLine2,
+            city: address.city,
+            state: address.state,
+            zip: address.zip,
+          },
+        },
+      },
+    });
+    res.status(200).json(partner);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update partner" });
+  }
 };
 
 const deletePartner = async (

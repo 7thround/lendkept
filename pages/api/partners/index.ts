@@ -1,9 +1,9 @@
 // src/pages/api/partners/index.ts
+import bcrypt from "bcrypt";
+import cookie from "cookie";
+import jwt from "jsonwebtoken";
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import cookie from "cookie";
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,7 +22,11 @@ export default async function handler(
 
 async function getPartners(req: NextApiRequest, res: NextApiResponse) {
   const partners = await prisma.partner.findMany();
-  res.status(200).json(partners);
+  const partnersWithImages = partners.map(partner => ({
+    ...partner,
+    profileImage: partner.profileImage ? partner.profileImage.toString('base64') : null
+  }));
+  res.status(200).json(partnersWithImages);
 }
 
 async function createPartner(req: NextApiRequest, res: NextApiResponse) {
@@ -41,7 +45,8 @@ async function createPartner(req: NextApiRequest, res: NextApiResponse) {
     city,
     state,
     zip,
-    password
+    password,
+    profileImage
   } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -76,7 +81,8 @@ async function createPartner(req: NextApiRequest, res: NextApiResponse) {
           companyId,
           referralCode: defaultReferralCode,
           referringPartnerId: referringPartner?.id || null,
-          addressId: address.id
+          addressId: address.id,
+          profileImage: Buffer.from(profileImage, 'base64')
         }
       });
       if (!newPartner) {

@@ -135,7 +135,7 @@ const CompanyPortal = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {partners.length ? (
+                {partners?.length ? (
                   partners.map((partner) => (
                     <tr key={partner.id}>
                       <td className="py-3 px-4 whitespace-nowrap">

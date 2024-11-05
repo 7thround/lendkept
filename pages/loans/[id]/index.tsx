@@ -56,12 +56,20 @@ export const getServerSideProps = async (context) => {
       },
     };
   }
-
+  const user = await getUser(token);
   return {
     props: {
       preloadedLoan: JSON.parse(JSON.stringify(loan)),
-      user: await getUser(token),
+      user: JSON.parse(JSON.stringify(user)),
       availableLoanAdmins,
+      company:
+        user.role === "COMPANY"
+          ? JSON.parse(JSON.stringify(user.company))
+          : null,
+      partner:
+        user.role === "PARTNER"
+          ? JSON.parse(JSON.stringify(user.partner))
+          : null,
     },
   };
 };

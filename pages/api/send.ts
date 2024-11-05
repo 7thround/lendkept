@@ -15,6 +15,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   const recipients = Array.isArray(to) ? to : [to];
 
   try {
+    console.log("Sending Email", { to, subject, template, payload });
+    return res.status(200).json({ success: true, data: { to, subject, template, payload } });
     const results = await Promise.all(recipients.map(async (recipient) => {
       return await resend.emails.send({
         from: FROM,
