@@ -23,13 +23,11 @@ model Partner {
   address            Address?  @relation(fields: [addressId], references: [id])
   addressId          String?   @unique 
   user               User?
-  profileImage       Bytes?
 }
 
 model Company {
   id           String   @default(uuid()) @id
   name         String
-  logo         Bytes?
   phone        String
   partners     Partner[]
   loans        Loan[]
@@ -66,6 +64,7 @@ model User {
   partnerId String?  @unique
   notes     Note[]
   loans     Loan[]   @relation("LoanAdmin")
+  profileImage       Bytes?
 }
 
 enum Role {

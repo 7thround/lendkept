@@ -37,18 +37,20 @@ interface SendEmailProps {
 }
 
 export const sendEmail = async ({ to, subject, template, payload }: SendEmailProps) => {
-  try {
-    const response = await fetch("/api/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ to, subject, template, payload }),
-    });
-    console.log("Email sent successfully:", response);
-  } catch (error) {
-    console.error("Error sending email:", error);
+  const response = await fetch("/api/send", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ to, subject, template, payload }),
+  });
+
+  if (!response.ok) {
+    console.error(`Failed to send email to: ${to}`, await response.json());
+    return;
   }
+
+  console.log("Email sent successfully:", await response.json());
 };
 
 export const resizeImage = (file, maxWidth, maxHeight, callback) => {
@@ -63,11 +65,11 @@ export const resizeImage = (file, maxWidth, maxHeight, callback) => {
       canvas.width = img.width * ratio;
       canvas.height = img.height * ratio;
 
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       callback(canvas.toDataURL("image/jpeg").split(",")[1]); // Get base64 string
     };
-    if (typeof e.target.result === "string") {
+    if (typeof e.target?.result === "string") {
       img.src = e.target.result;
     }
   };

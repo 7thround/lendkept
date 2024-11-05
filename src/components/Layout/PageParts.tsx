@@ -37,9 +37,9 @@ export const FullScreenLoader = () => (
   </div>
 );
 
-export const ProfileImage = ({ src }: { src: string }) => (
+export const ProfileImage = ({ src }: { src: Buffer }) => (
   <img
-    src={`data:image/jpeg;base64,${Buffer.from(src).toString("base64")}`}
+    src={src.toString()}
     alt="Profile"
     className="rounded-full h-10 w-10 object-cover"
   />
