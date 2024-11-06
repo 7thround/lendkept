@@ -11,7 +11,7 @@ const LoanAdminsPanel = ({ company, loanAdmins }) => {
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     onConfirm: () => {},
-    message: null,
+    message: null as JSX.Element | null,
   });
   const closeConfirmModal = () => {
     setConfirmModal({

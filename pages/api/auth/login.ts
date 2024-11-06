@@ -1,7 +1,7 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import cookie from "cookie";
+import jwt from "jsonwebtoken";
+import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
 
 export default async function handler(
@@ -24,7 +24,7 @@ export default async function handler(
 
   const token = jwt.sign(
     { userId: user.id, role: user.role, companyId: user.companyId },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET as string,
     { expiresIn: "1h" }
   );
 

@@ -1,7 +1,7 @@
 import { TrashIcon } from "@heroicons/react/20/solid";
-import { Company, Partner, User } from "@prisma/client";
-import { useRouter } from "next/router";
+import { User } from "@prisma/client";
 import { useState } from "react";
+import { CompanyData } from "../../../types";
 import { copyToClipboard } from "../../utils";
 import ConfirmationModal from "../common/ConfirmationModal";
 import { Column, PageContainer } from "../Layout/PageParts";
@@ -9,21 +9,17 @@ import LoanAdminsPanel from "../LoanAdminsPanel";
 import LoansTable from "../LoansTable";
 
 const CompanyPortal = ({
-  partners,
   company,
   loanAdmins,
 }: {
-  partners: Partner[];
-  company: Company;
+  company: CompanyData;
   loanAdmins: User[];
 }) => {
-  const router = useRouter();
-
+  const { partners } = company;
   const [message, setMessage] = useState("");
   const [messageHistory, setMessageHistory] = useState([
     "Welcome to our loan service!",
   ]);
-
   const handleSendMessage = () => {
     setMessageHistory([...messageHistory, message]);
     setMessage("");
@@ -42,16 +38,6 @@ const CompanyPortal = ({
     });
   };
 
-  const handleDeleteLoan = async (id) => {
-    const res = await fetch(`/api/loans/${id}`, {
-      method: "DELETE",
-    });
-
-    if (res.ok) {
-      alert("Loan deleted successfully");
-    }
-  };
-
   const handleDeletePartner = async (id) => {
     const res = await fetch(`/api/partners/${id}`, {
       method: "DELETE",
@@ -61,17 +47,6 @@ const CompanyPortal = ({
       alert("Partner deleted successfully");
       window.location.reload();
     }
-  };
-
-  const confirmDeleteLoan = (id) => {
-    setConfirmModal({
-      isOpen: true,
-      onConfirm: () => {
-        handleDeleteLoan(id);
-        closeConfirmModal();
-      },
-      message: "Are you sure you want to delete this loan?",
-    });
   };
 
   const confirmDeletePartner = (id) => {
@@ -99,11 +74,7 @@ const CompanyPortal = ({
   return (
     <PageContainer>
       <Column col={8}>
-        <LoansTable
-          partners={partners}
-          confirmDeleteLoan={confirmDeleteLoan}
-          company={company}
-        />
+        <LoansTable company={company} />
       </Column>
       <Column col={4}>
         {/* Referred Partners Panel */}
@@ -138,10 +109,10 @@ const CompanyPortal = ({
                 {partners?.length ? (
                   partners.map((partner) => (
                     <tr key={partner.id}>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap max-w-36 truncate">
                         {partner.name}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 whitespace-nowrap max-w-36 truncate">
                         {partner.email.toLocaleLowerCase()}
                       </td>
                       <td className="text-center py-2 px-4 whitespace-nowrap">

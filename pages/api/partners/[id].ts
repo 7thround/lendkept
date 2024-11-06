@@ -50,7 +50,6 @@ const updatePartner = async (req: NextApiRequest, res: NextApiResponse, id: stri
       data: {
         name,
         phone,
-        profileImage,
         address: {
           update: {
             addressLine1: address.addressLine1,
@@ -62,6 +61,14 @@ const updatePartner = async (req: NextApiRequest, res: NextApiResponse, id: stri
         },
       },
     });
+
+    await prisma.user.update({
+      where: { partnerId: id },
+      data: {
+        profileImage,
+      },
+    });
+
     res.status(200).json(partner);
   } catch (error) {
     res.status(500).json({ error: "Failed to update partner" });

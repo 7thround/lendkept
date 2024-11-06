@@ -63,11 +63,11 @@ export const getServerSideProps = async (context) => {
       user: JSON.parse(JSON.stringify(user)),
       availableLoanAdmins,
       company:
-        user.role === "COMPANY"
+        user?.role === "COMPANY"
           ? JSON.parse(JSON.stringify(user.company))
           : null,
       partner:
-        user.role === "PARTNER"
+        user?.role === "PARTNER"
           ? JSON.parse(JSON.stringify(user.partner))
           : null,
     },
@@ -143,7 +143,7 @@ const LoanPage = ({
         );
         sendList.forEach(async (recipient) => {
           await sendEmail({
-            to: recipient.email,
+            to: recipient.email as string,
             subject: "New Note Added",
             template: "NewNote",
             payload: { note: newNote, loan },
@@ -403,7 +403,7 @@ const LoanPage = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
-                  Client Information
+                  Borrower Information
                 </h2>
                 <div className="flex gap-4 flex-col">
                   {loan.borrowers?.map((borrower, index) => (

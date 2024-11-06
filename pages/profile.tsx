@@ -1,3 +1,4 @@
+import { Company, Partner } from "@prisma/client";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
@@ -28,7 +29,7 @@ export const getServerSideProps: GetServerSideProps = async (
       };
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: string;
       role: string;
     };
@@ -39,11 +40,20 @@ export const getServerSideProps: GetServerSideProps = async (
       },
     });
 
-    let entity = null;
+    if (!user) {
+      return {
+        redirect: {
+          destination: "/login",
+          permanent: false,
+        },
+      };
+    }
+
+    let entity: Partner | Company | null = null;
     if (user.role === "COMPANY") {
       entity = await prisma.company.findUnique({
         where: {
-          id: user.companyId,
+          id: user.companyId as string,
         },
         include: {
           address: true,
@@ -52,7 +62,7 @@ export const getServerSideProps: GetServerSideProps = async (
     } else {
       entity = await prisma.partner.findUnique({
         where: {
-          id: user.partnerId,
+          id: user.partnerId as string,
         },
         include: {
           address: true,
@@ -60,7 +70,7 @@ export const getServerSideProps: GetServerSideProps = async (
       });
     }
 
-    if (!user || !entity) {
+    if (!entity) {
       return {
         redirect: {
           destination: "/login",
@@ -70,10 +80,10 @@ export const getServerSideProps: GetServerSideProps = async (
     }
     return {
       props: {
-        user,
-        entity: JSON.parse(JSON.stringify(entity)),
-        company: JSON.parse(JSON.stringify(entity)),
-        partner: JSON.parse(JSON.stringify(entity)),
+        user: JSON.parse(JSON.stringify(user)),
+        entity: entity,
+        company: entity,
+        partner: entity,
       },
     };
   } catch (error) {
@@ -95,14 +105,10 @@ const ProfileEdit = ({ entity, user }) => {
   const isCompanyAdmin = user.role === "COMPANY";
   const [addressLine1, setAddressLine1] = useState(entity.address.addressLine1);
   const [addressLine2, setAddressLine2] = useState(entity.address.addressLine2);
-  const [profileImage, setProfileImage] = useState(
-    entity.profileImage ?? entity.logo ?? ""
-  );
+  const [profileImage, setProfileImage] = useState(user.profileImage);
   const [city, setCity] = useState(entity.address.city);
   const [state, setState] = useState(entity.address.state);
   const [zip, setZip] = useState(entity.address.zip);
-  const [slug, setSlug] = useState(entity.slug);
-  const [primaryColor, setPrimaryColor] = useState(entity.primaryColor);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -122,14 +128,7 @@ const ProfileEdit = ({ entity, user }) => {
     const url = isCompanyAdmin
       ? `/api/companies/${entity.id}`
       : `/api/partners/${entity.id}`;
-    const payload = isCompanyAdmin
-      ? {
-          ...(includeImage && { logo: profileImage }),
-          slug,
-          primaryColor,
-          url,
-        }
-      : { profileImage };
+
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -142,7 +141,8 @@ const ProfileEdit = ({ entity, user }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...payload,
+          ...(isCompanyAdmin && { url, user }),
+          ...(includeImage && { profileImage }),
           phone,
           name,
           email,
@@ -244,7 +244,7 @@ const ProfileEdit = ({ entity, user }) => {
           className="w-full p-2 border rounded"
         />
         <div className="flex items-center justify-between gap-4">
-          {!includeImage && <ProfileImage src={profileImage} />}
+          {!includeImage && profileImage && <ProfileImage src={profileImage} />}
           <input
             type="file"
             accept="image/*"

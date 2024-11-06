@@ -13,3 +13,6 @@ type LoanWithAddress = Loan & {
 };
 
 type PreLoadedLoanData = Loan & Address & Borrower & Note[] & Partner & Company;
+
+type PartnerData = Partner & { company: Company } & { affiliates: Partner[] };
+type CompanyData = Company & { partners: PartnerData[] };

@@ -1,18 +1,17 @@
 import { Partner } from "@prisma/client";
 import router from "next/router";
 import { useEffect, useState } from "react";
+import { LoanWithAddress } from "../../types";
 import { LoanStatusLabels } from "../constants";
 import { FullScreenLoader } from "./Layout/PageParts";
 
 const LoansTable = ({
-  partners,
-  confirmDeleteLoan,
+  affiliates = [],
   company,
   partner,
   partnerIds,
 }: {
-  partners: Partner[];
-  confirmDeleteLoan?: (id: number) => void;
+  affiliates?: Partner[];
   company?: { slug: string };
   partner?: Partner;
   partnerIds?: string;
@@ -24,7 +23,7 @@ const LoansTable = ({
   );
   const [sortColumn, setSortColumn] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
-  const [loans, setLoans] = useState([]);
+  const [loans, setLoans] = useState<LoanWithAddress[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchLoans = async () => {
     setLoading(true);
@@ -73,17 +72,17 @@ const LoansTable = ({
                 </option>
               ))}
             </select>
-            {!!partners?.length && (
+            {!!affiliates?.length && (
               <select
                 className="border border-gray-300 rounded-lg p-1 px-3 ml-2"
                 value={referredByFilter}
                 onChange={(e) => setReferredByFilter(e.target.value)}
               >
-                {company && <option value="">All Partners</option>}
+                {company && <option value="">All Affiliates</option>}
                 {partner && (
                   <option value={partner.name}>{partner.name}</option>
                 )}
-                {partners.map((partner) => (
+                {affiliates.map((partner) => (
                   <option key={partner.id} value={partner.name}>
                     {partner.name}
                   </option>

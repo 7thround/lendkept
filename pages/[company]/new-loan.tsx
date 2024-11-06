@@ -1,9 +1,9 @@
-import { useState } from "react";
-import prisma from "../../lib/prisma";
 import { Company, User } from "@prisma/client";
-import LoanApplicationForm from "./LoanApplicationForm";
 import cookie from "cookie";
+import { useState } from "react";
 import { getUser } from "..";
+import prisma from "../../lib/prisma";
+import LoanApplicationForm from "./LoanApplicationForm";
 
 export const getServerSideProps = async (context) => {
   const { params } = context;
@@ -108,9 +108,9 @@ const MortgageApplicationForm = ({ company, user }: Props) => {
           <p className="text-sm text-gray-600 text-center">
             You are applying for a mortgage with{" "}
             <a
-              href={company.url}
+              href={company.url as string}
               className="font-bold text-black"
-              style={{ color: primaryColor }}
+              style={{ color: primaryColor as string }}
             >
               {company.name}
             </a>
@@ -120,7 +120,7 @@ const MortgageApplicationForm = ({ company, user }: Props) => {
       )}
       <div className="border-t border-gray-300 my-6"></div>
       <LoanApplicationForm
-        primaryColor={primaryColor}
+        primaryColor={primaryColor as string}
         formData={formData}
         handleSubmit={handleSubmit}
         setFormData={setFormData}

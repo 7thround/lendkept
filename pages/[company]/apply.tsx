@@ -20,7 +20,7 @@ export const getServerSideProps = async (context) => {
       };
     }
 
-    const partner: Partner = await prisma.partner.findFirst({
+    const partner = await prisma.partner.findFirst({
       where: {
         referralCode,
         companyId: company.id,
@@ -87,7 +87,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
 
     if (response.ok) {
       await sendEmail({
-        to: company.email,
+        to: company.email as string,
         subject: "New Loan Application",
         template: "LoanSubmitted",
         payload: {
@@ -139,7 +139,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
             Apply for funding with ease. Fill out the loan application form and get started today.
           `}
         />
-        <meta property="og:url" content={company.url} />
+        <meta property="og:url" content={company.url as string} />
         <meta property="og:type" content="website" />
         {/* <meta
           property="og:image"
@@ -158,9 +158,9 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
             <p className="text-sm text-gray-600 text-center">
               You are applying for a mortgage with{" "}
               <a
-                href={company.url}
+                href={company.url as string}
                 className="font-bold text-black"
-                style={{ color: primaryColor }}
+                style={{ color: primaryColor as string }}
               >
                 {company.name}
               </a>
@@ -169,7 +169,7 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
           </div>
           <div className="border-t border-gray-300 my-6"></div>
           <LoanApplicationForm
-            primaryColor={primaryColor}
+            primaryColor={primaryColor as string}
             formData={formData}
             handleSubmit={handleSubmit}
             setFormData={setFormData}

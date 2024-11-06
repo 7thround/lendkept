@@ -1,23 +1,13 @@
 import { LinkIcon } from "@heroicons/react/20/solid";
-import { Company, Partner } from "@prisma/client";
 import { useState } from "react";
-import { LoanWithAddress } from "../../../types";
+import { PartnerData } from "../../../types";
 import { copyToClipboard } from "../../utils";
 import { Column, PageContainer } from "../Layout/PageParts";
 import LoansTable from "../LoansTable";
 import ConfirmationModal from "../common/ConfirmationModal";
 
-const PartnerPortal = ({
-  partner,
-  company,
-  partners,
-}: {
-  partner: Partner;
-  company: Company;
-  loans: LoanWithAddress[];
-  partners: Partner[];
-  referredLoans: LoanWithAddress[];
-}) => {
+const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
+  const { affiliates, company } = partner;
   const [message, setMessage] = useState("");
   const [messageHistory, setMessageHistory] = useState([
     "Welcome to our loan service!",
@@ -105,11 +95,7 @@ const PartnerPortal = ({
   return (
     <PageContainer>
       <Column col={8}>
-        <LoansTable
-          partners={partners}
-          confirmDeleteLoan={confirmDeleteLoan}
-          partner={partner}
-        />
+        <LoansTable affiliates={affiliates} partner={partner} />
       </Column>
       <Column col={4}>
         {/* Refer a Partner Panel */}
@@ -165,8 +151,8 @@ const PartnerPortal = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {partners.length ? (
-                  partners.map((partner) => (
+                {affiliates.length ? (
+                  affiliates.map((partner) => (
                     <tr key={partner.id}>
                       <td className="py-2 px-4 whitespace-nowrap">
                         {partner.name}
@@ -179,7 +165,7 @@ const PartnerPortal = ({
                 ) : (
                   <tr>
                     <td
-                      className="py-2 px-4 whitespace-nowrap text-center"
+                      className="py-2 whitespace-nowrap text-center"
                       colSpan={2}
                     >
                       <div>No referred partners yet</div>

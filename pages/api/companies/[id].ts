@@ -49,9 +49,13 @@ const updateCompany = async (
   res: NextApiResponse,
   id: string
 ) => {
-  const { logo, slug, primaryColor, url, phone,
+  const {
+    url,
+    phone,
     name,
     email,
+    profileImage,
+    user,
     address: {
       addressLine1,
       addressLine2,
@@ -63,9 +67,6 @@ const updateCompany = async (
   const company = await prisma.company.update({
     where: { id: String(id) },
     data: {
-      logo,
-      slug,
-      primaryColor,
       url,
       phone,
       name,
@@ -81,6 +82,13 @@ const updateCompany = async (
       },
     },
   });
+
+  if (user) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { profileImage, name },
+    });
+  }
 
   res.status(200).json(company);
 };

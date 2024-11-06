@@ -122,7 +122,7 @@ function RegisterPage({
       {loading && <FullScreenLoader />}
       <form
         onSubmit={handleSubmit}
-        className="p-6 max-w-md mx-auto space-y-4 bg-white shadow-md rounded border-t-4"
+        className="p-6 max-w-lg mx-auto space-y-4 bg-white shadow-md rounded border-t-4"
         style={{ borderColor: company.primaryColor as string }}
       >
         <div>

@@ -24,6 +24,12 @@ export const getServerSideProps = async (context) => {
     },
   });
 
+  if (!loan) {
+    return {
+      notFound: true,
+    };
+  }
+
   const serializedLoan = {
     ...loan,
     borrowers: loan.borrowers.map((borrower) => ({
@@ -32,7 +38,7 @@ export const getServerSideProps = async (context) => {
     })),
   };
 
-  let partner = null;
+  let partner: Partner | null = null;
   if (loan.partnerId) {
     partner = await prisma.partner.findUnique({
       where: { id: loan.partnerId },
@@ -44,7 +50,7 @@ export const getServerSideProps = async (context) => {
 
   const loanAdmin = await prisma.user.findUnique({
     where: {
-      id: loan.loanAdminId,
+      id: loan.loanAdminId as string,
     },
     select: {
       name: true,
@@ -154,7 +160,7 @@ const LoanPage = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
-                  Client Information
+                  Borrower Information
                 </h2>
                 <div className="flex gap-4 flex-col">
                   {loan.borrowers.map((borrower, index) => (
@@ -180,7 +186,7 @@ const LoanPage = ({
                       </p>
                       <p>
                         <strong>Income:</strong> $
-                        {borrower.income.toLocaleString()}
+                        {borrower.income?.toLocaleString()}
                       </p>
                       <p>
                         <strong>Credit:</strong> {borrower.credit}

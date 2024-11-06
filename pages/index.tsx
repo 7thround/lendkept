@@ -1,20 +1,17 @@
-import { Company, Partner, Role, User } from "@prisma/client";
+import { Company, Role, User } from "@prisma/client";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import { GetServerSideProps, GetServerSidePropsContext } from "next";
 import React from "react";
 import prisma from "../lib/prisma";
 import CompanyPortal from "../src/components/CompanyPortal/CompanyPortal";
-import LoanAdminPortal from "../src/components/LoanAdminPortal/LoanAdminPortal";
 import PartnerPortal from "../src/components/PartnerPortal/PartnerPortal";
-import { LoanWithAddress } from "../types";
+import { LoanWithAddress, PartnerData } from "../types";
 
-export const getUser = async (token) => {
-  if (!token) {
-    return null;
-  }
+export const getUser = async (token: string) => {
+  if (!token) return null;
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
     userId: string;
     role: string;
   };
@@ -50,7 +47,7 @@ export const getServerSideProps: GetServerSideProps = async (
       };
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: string;
       role: string;
     };
@@ -63,22 +60,27 @@ export const getServerSideProps: GetServerSideProps = async (
       },
     });
 
+    if (!user) {
+      return {
+        redirect: {
+          destination: "/login",
+          permanent: false,
+        },
+      };
+    }
+
     if (role === "PARTNER") {
-      const partnerData = await prisma.partner.findUnique({
+      const partner = await prisma.partner.findUnique({
         where: {
-          id: user.partnerId,
+          id: user.partnerId as string,
         },
         include: {
           company: true,
-          referredPartners: {
-            include: {
-              loans: true,
-            },
-          },
+          affiliates: true,
         },
       });
 
-      if (!user || !partnerData || !partnerData.company) {
+      if (!partner || !partner.company) {
         return {
           redirect: {
             destination: "/login",
@@ -87,75 +89,10 @@ export const getServerSideProps: GetServerSideProps = async (
         };
       }
 
-      // include partner name
-      const partnerLoans = await prisma.loan.findMany({
-        where: {
-          partnerId: partnerData.id,
-        },
-        include: {
-          address: true,
-        },
-      });
-
-      const referredLoans = await prisma.loan.findMany({
-        where: {
-          partnerId: {
-            in: partnerData.referredPartners.map((partner) => partner.id),
-          },
-        },
-        include: {
-          partner: {
-            select: {
-              name: true,
-            },
-          },
-          address: true,
-        },
-      });
-
-      const { company, referredPartners } = partnerData;
-
       return {
         props: {
-          role,
-          partner: JSON.parse(JSON.stringify(partnerData)),
-          company: JSON.parse(JSON.stringify(company)),
-          loans: [...partnerLoans],
-          partners: JSON.parse(JSON.stringify(referredPartners)),
-          referredLoans,
-          user,
-        },
-      };
-    }
-
-    if (role === "LOAN_ADMIN") {
-      const company = await prisma.company.findUnique({
-        where: {
-          id: user.companyId,
-        },
-      });
-
-      const loans = await prisma.loan.findMany({
-        where: {
-          companyId: company.id,
-          loanAdminId: user.id,
-        },
-        include: {
-          partner: {
-            select: {
-              name: true,
-            },
-          },
-          address: true,
-        },
-      });
-
-      return {
-        props: {
-          company: JSON.parse(JSON.stringify(company)),
-          loans,
-          user,
-          role,
+          user: JSON.parse(JSON.stringify(user)),
+          partner,
         },
       };
     }
@@ -163,47 +100,66 @@ export const getServerSideProps: GetServerSideProps = async (
     if (role === "COMPANY") {
       const company = await prisma.company.findUnique({
         where: {
-          id: user.companyId,
+          id: user.companyId as string,
+        },
+        include: {
+          partners: true,
         },
       });
-      const partners = await prisma.partner.findMany({
-        where: {
-          companyId: company.id,
-        },
-      });
-
+      if (!company) {
+        return {
+          redirect: {
+            destination: "/login",
+            permanent: false,
+          },
+        };
+      }
       const loanAdmins = await prisma.user.findMany({
         where: {
           companyId: company.id,
           role: "LOAN_ADMIN",
         },
       });
-
-      const loans = await prisma.loan.findMany({
-        where: {
-          companyId: company.id,
-        },
-        include: {
-          partner: {
-            select: {
-              name: true,
-            },
-          },
-          address: true,
-        },
-      });
-
       return {
         props: {
-          role,
-          company: JSON.parse(JSON.stringify(company)),
-          loans,
-          partners: JSON.parse(JSON.stringify(partners)),
-          user,
+          company: company,
           loanAdmins,
+          user: JSON.parse(JSON.stringify(user)),
         },
       };
     }
+
+    // if (role === "LOAN_ADMIN") {
+    //   const company = await prisma.company.findUnique({
+    //     where: {
+    //       id: user.companyId,
+    //     },
+    //   });
+
+    //   const loans = await prisma.loan.findMany({
+    //     where: {
+    //       companyId: company.id,
+    //       loanAdminId: user.id,
+    //     },
+    //     include: {
+    //       partner: {
+    //         select: {
+    //           name: true,
+    //         },
+    //       },
+    //       address: true,
+    //     },
+    //   });
+
+    //   return {
+    //     props: {
+    //       company: JSON.parse(JSON.stringify(company)),
+    //       loans,
+    //       user,
+    //       role,
+    //     },
+    //   };
+    // }
 
     return {
       props: {},
@@ -223,10 +179,8 @@ export const getServerSideProps: GetServerSideProps = async (
 type Props = {
   role: Role;
   company: Company;
-  partner?: Partner;
+  partner?: PartnerData;
   loans?: LoanWithAddress[];
-  referredLoans?: LoanWithAddress[];
-  partners?: Partner[];
   user: User;
   loanAdmins?: User[];
 };
@@ -236,31 +190,16 @@ const Home: React.FC<Props> = ({
   company,
   role,
   loans,
-  partners,
-  referredLoans,
   user,
-  loanAdmins,
+  loanAdmins = [],
 }: Props) => {
   if (role === "LOAN_ADMIN") {
-    return <LoanAdminPortal loans={loans} company={company} user={user} />;
+    // return <LoanAdminPortal loans={loans} company={company} user={user} />;
   }
   return (
     <>
-      {role === "PARTNER" ? (
-        <PartnerPortal
-          partner={partner}
-          company={company}
-          loans={loans}
-          partners={partners}
-          referredLoans={referredLoans}
-        />
-      ) : (
-        <CompanyPortal
-          partners={partners}
-          company={company}
-          loanAdmins={loanAdmins}
-        />
-      )}
+      {partner && <PartnerPortal partner={partner} />}
+      {company && <CompanyPortal company={company} loanAdmins={loanAdmins} />}
     </>
   );
 };
