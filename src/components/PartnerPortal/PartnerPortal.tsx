@@ -18,11 +18,7 @@ const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
   };
 
   const referralLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/apply?referralCode=${partner.referralCode}`;
-  const [referralLoans, setReferralBonuses] = useState([
-    { name: "Jerry Malcolm", amount: 500, loanID: 47 },
-    { name: "James Duran", amount: 1500, loanID: 23 },
-    { name: "Jessica Hernandez", amount: 650, loanID: 17 },
-  ]);
+  const [referralLoans, setReferralBonuses] = useState([]);
 
   const [copyText, setCopyText] = useState<String | JSX.Element>(
     <>
@@ -189,7 +185,8 @@ const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
             Affiliate Commissions
           </h2>
           <ul className="divide-y divide-gray-200">
-            {referralLoans.map((bonus, index) => (
+            <li className="pb-2">Coming Soon!</li>
+            {/* {referralLoans.map((bonus, index) => (
               <li
                 key={index}
                 className="py-2 flex justify-between items-center"
@@ -197,7 +194,7 @@ const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
                 <span>{bonus.name}</span>
                 <span className="text-green-500">${bonus.amount}</span>
               </li>
-            ))}
+            ))} */}
           </ul>
         </div>
       </Column>
