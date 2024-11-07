@@ -63,13 +63,13 @@ export const getServerSideProps = async (context) => {
   const cookies = req.headers.cookie;
   const parsedCookies = cookie.parse(cookies || "");
   const token = parsedCookies.token;
-
+  const user = await getUser(token);
   return {
     props: {
       loan: serializedLoan,
       partner,
       company,
-      user: await getUser(token),
+      user: JSON.parse(JSON.stringify(user)),
       loanAdmin,
     },
   };
