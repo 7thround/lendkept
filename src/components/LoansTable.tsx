@@ -92,7 +92,7 @@ const LoansTable = ({
             {company && (
               <button
                 className="border border-[#e74949] text-[#e74949] py-1 px-3 rounded-lg ml-2"
-                onClick={() => router.push(`${company.slug}/new-loan`)}
+                onClick={() => router.push(`${company.slug}/apply`)}
               >
                 New Loan
               </button>

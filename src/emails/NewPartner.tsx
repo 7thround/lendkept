@@ -10,8 +10,7 @@ const NewPartner: React.FC<Readonly<NewPartnerProps>> = ({
   <>
     <h4>{payload.partner.name} has joined the team!</h4>
     <p>
-      View their account details
-      <a href={`https://www.lendkept.com`}>here</a>.
+      View their account details <a href={`https://www.lendkept.com`}>here</a>.
     </p>
   </>
 );

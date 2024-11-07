@@ -1,3 +1,4 @@
+import AffiliateLoanSubmitted from "./AffiliateLoanSubmitted";
 import LoanFunded from "./LoanFunded";
 import LoanOfficerAdded from "./LoanOfficerAdded";
 import LoanStatusUpdated from "./LoanStatusUpdated";
@@ -18,6 +19,7 @@ export interface EmailTemplatesInterface {
   NewPartner: typeof NewPartner;
   NewLoanOfficer: typeof NewLoanOfficer;
   ResetPassword: typeof ResetPassword;
+  AffiliateLoanSubmitted: typeof AffiliateLoanSubmitted;
 }
 
 export const EmailTemplates = {
@@ -30,4 +32,5 @@ export const EmailTemplates = {
   NewPartner,
   NewLoanOfficer,
   ResetPassword,
+  AffiliateLoanSubmitted,
 };

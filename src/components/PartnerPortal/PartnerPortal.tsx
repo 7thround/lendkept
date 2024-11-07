@@ -19,9 +19,9 @@ const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
 
   const referralLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/apply?referralCode=${partner.referralCode}`;
   const [referralLoans, setReferralBonuses] = useState([
-    { name: "Jerry Malcolm", amount: 500 },
-    { name: "James Duran", amount: 1500 },
-    { name: "Jessica Hernandez", amount: 650 },
+    { name: "Jerry Malcolm", amount: 500, loanID: 47 },
+    { name: "James Duran", amount: 1500, loanID: 23 },
+    { name: "Jessica Hernandez", amount: 650, loanID: 17 },
   ]);
 
   const [copyText, setCopyText] = useState<String | JSX.Element>(
@@ -41,12 +41,14 @@ const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
             <LinkIcon className="h-5 w-5 text-white" />
           </>
         ),
-      300
+      1000
     );
   };
 
   const [copyPartnerText, setCopyPartnerText] = useState<String | JSX.Element>(
-    <LinkIcon className="h-5 w-5 text-white" />
+    <>
+      Affiliate Link <LinkIcon className="h-5 w-5 text-white inline" />
+    </>
   );
   const handleCopyPartnerLink = () => {
     copyToClipboard(
@@ -54,8 +56,13 @@ const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
     );
     setCopyPartnerText("Link Copied!");
     setTimeout(
-      () => setCopyPartnerText(<LinkIcon className="h-5 w-5 text-white" />),
-      300
+      () =>
+        setCopyPartnerText(
+          <>
+            Affiliate Link <LinkIcon className="h-5 w-5 text-white inline" />
+          </>
+        ),
+      1000
     );
   };
   const [confirmModal, setConfirmModal] = useState({

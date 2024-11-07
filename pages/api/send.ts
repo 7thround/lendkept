@@ -13,17 +13,17 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    console.log("Sending Email", { to, subject, template, payload });
+    console.log("Sending Email", { to, template });
 
-    await resend.emails.send({
+    const response = await resend.emails.send({
       from: FROM,
       to,
       subject,
       react: EmailTemplates[template]({ payload }),
     });
 
-    console.log('Successfully sent email to:', to);
-    return res.status(200).json({ message: 'Email sent successfully' });
+    console.log('Successfully sent email to:', to, response);
+    return res.status(200).json({ message: 'Email sent successfully', response });
   } catch (error) {
     console.error("Error sending email to: ", to, error);
     return res.status(500).json({ error: 'Internal Server Error' });

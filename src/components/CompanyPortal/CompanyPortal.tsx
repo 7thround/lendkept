@@ -61,14 +61,14 @@ const CompanyPortal = ({
   };
 
   const [copyPartnerText, setCopyPartnerText] = useState<String | JSX.Element>(
-    "Partner Link"
+    "Partner Signup Link"
   );
   const handleCopyPartnerLink = () => {
     copyToClipboard(
       `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register`
     );
     setCopyPartnerText("Link Copied!");
-    setTimeout(() => setCopyPartnerText("Partner Link"), 300);
+    setTimeout(() => setCopyPartnerText("Partner Signup Link"), 1000);
   };
 
   return (

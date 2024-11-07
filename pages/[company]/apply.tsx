@@ -1,4 +1,5 @@
-import { Company, Partner } from "@prisma/client";
+import { Company, Loan, Partner } from "@prisma/client";
+import axios, { AxiosResponse } from "axios";
 import Head from "next/head";
 import { useState } from "react";
 import prisma from "../../lib/prisma";
@@ -25,6 +26,7 @@ export const getServerSideProps = async (context) => {
         referralCode,
         companyId: company.id,
       },
+      include: { referringPartner: true },
     });
 
     return {
@@ -44,10 +46,11 @@ export const getServerSideProps = async (context) => {
 
 interface Props {
   company: Company;
-  partner: Partner;
+  partner: Partner & { referringPartner?: Partner };
 }
 
 const MortgageApplicationForm = ({ company, partner }: Props) => {
+  console.log(partner);
   const { primaryColor } = company;
   const [formData, setFormData] = useState({
     loanType: "HOME_PURCHASE",
@@ -76,37 +79,48 @@ const MortgageApplicationForm = ({ company, partner }: Props) => {
 
     // Include co-borrower if applicable
     formData.includeCoBorrower = includeCoBorrower || false;
+    const response: AxiosResponse<Loan> = await axios.post(
+      "/api/loans",
+      formData
+    );
 
-    const response = await fetch("/api/loans", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-
-    if (response.ok) {
+    if (response.status === 201) {
       await sendEmail({
         to: company.email as string,
         subject: "New Loan Application",
         template: "LoanSubmitted",
         payload: {
           company,
+          loanId: response.data.id,
           loan: formData,
+          partner,
         },
       });
-      console.log(`Email sent to ${company.email}`);
       if (partner) {
         await sendEmail({
           to: partner.email,
-          subject: "New Loan Application",
+          subject: "New Loan Application with LendKEPT",
           template: "LoanSubmitted",
           payload: {
             company,
+            loanId: response.data.id,
             loan: formData,
+            partner,
           },
         });
-        console.log(`Email sent to ${partner.email}`);
+      }
+      if (partner?.referringPartner) {
+        await sendEmail({
+          to: partner.referringPartner.email,
+          subject: "New Affiliate Loan Application with LendKEPT",
+          template: "AffiliateLoanSubmitted",
+          payload: {
+            company,
+            loanId: response.data.id,
+            loan: formData,
+            partner,
+          },
+        });
       }
       alert("Mortgage application submitted successfully!");
       setFormData({});

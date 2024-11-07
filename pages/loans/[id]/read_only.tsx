@@ -48,16 +48,19 @@ export const getServerSideProps = async (context) => {
     where: { id: loan.companyId },
   });
 
-  const loanAdmin = await prisma.user.findUnique({
-    where: {
-      id: loan.loanAdminId as string,
-    },
-    select: {
-      name: true,
-      id: true,
-      email: true,
-    },
-  });
+  let loanAdmin: { id: string; name: string; email: string } | null = null;
+  if (loan.loanAdminId) {
+    loanAdmin = await prisma.user.findUnique({
+      where: {
+        id: loan.loanAdminId as string,
+      },
+      select: {
+        name: true,
+        id: true,
+        email: true,
+      },
+    });
+  }
 
   const { req } = context;
   const cookies = req.headers.cookie;

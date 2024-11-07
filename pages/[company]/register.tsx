@@ -86,22 +86,22 @@ function RegisterPage({
       setLoading(true);
       const res: AxiosResponse<User> = await axios.post("/api/partners", data);
       if (res.status === 201) {
-        sendEmail({
+        await sendEmail({
           to: res.data.email as string,
-          subject: "Welcome to the team!",
+          subject: "Welcome to your Lender Referral team!",
           template: "WelcomePartner",
           payload: { partner: res.data },
         });
-        sendEmail({
+        await sendEmail({
           to: company.email as string,
-          subject: `${name}, has joined LendKept!`,
+          subject: `${name}, has joined as a Lender Partner!`,
           template: "NewPartner",
           payload: { partner: res.data },
         });
         if (referringPartner) {
-          sendEmail({
+          await sendEmail({
             to: referringPartner.email,
-            subject: `You have a new referral!`,
+            subject: `${name}, has joined as your new affiliate!`,
             template: "NewPartner",
             payload: { partner: res.data },
           });

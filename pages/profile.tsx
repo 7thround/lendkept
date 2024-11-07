@@ -158,7 +158,7 @@ const ProfileEdit = ({ entity, user }) => {
       });
       if (res.ok) {
         setMessage("Profile updated successfully.");
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 2000);
       } else {
         const { message } = await res.json();
         console.log("message", message);
