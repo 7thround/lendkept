@@ -1,7 +1,7 @@
 // src/middleware/auth.ts
-import { NextApiRequest, NextApiResponse } from "next";
-import jwt from "jsonwebtoken";
 import cookie from "cookie";
+import jwt from "jsonwebtoken";
+import { NextApiRequest, NextApiResponse } from "next";
 
 export function authenticate(handler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -17,7 +17,7 @@ export function authenticate(handler) {
     }
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
       // @ts-ignore
       req.user = decoded;
       return handler(req, res);

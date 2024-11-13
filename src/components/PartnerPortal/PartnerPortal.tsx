@@ -1,26 +1,13 @@
-import React, { useState } from "react";
-import { EyeIcon, LinkIcon } from "@heroicons/react/20/solid";
-import { useRouter } from "next/router";
-import { Company, Loan, Partner } from "@prisma/client";
-import { PageContainer, Column } from "../Layout/PageParts";
+import { LinkIcon } from "@heroicons/react/20/solid";
+import { useState } from "react";
+import { PartnerData } from "../../../types";
 import { copyToClipboard } from "../../utils";
-import { LoanStatusLabels } from "../../constants";
-import { LoanWithAddress } from "../../../types";
+import { Column, PageContainer } from "../Layout/PageParts";
+import LoansTable from "../LoansTable";
+import ConfirmationModal from "../common/ConfirmationModal";
 
-const PartnerPortal = ({
-  partner,
-  company,
-  loans,
-  partners,
-  referredLoans,
-}: {
-  partner: Partner;
-  company: Company;
-  loans: LoanWithAddress[];
-  partners: Partner[];
-  referredLoans: LoanWithAddress[];
-}) => {
-  const router = useRouter();
+const PartnerPortal = ({ partner }: { partner: PartnerData }) => {
+  const { affiliates, company } = partner;
   const [message, setMessage] = useState("");
   const [messageHistory, setMessageHistory] = useState([
     "Welcome to our loan service!",
@@ -31,10 +18,7 @@ const PartnerPortal = ({
   };
 
   const referralLink = `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/apply?referralCode=${partner.referralCode}`;
-  const [referralLoans, setReferralBonuses] = useState([
-    { name: "John Doe", amount: 250 },
-    { name: "Jane Smith", amount: 500 },
-  ]);
+  const [referralLoans, setReferralBonuses] = useState([]);
 
   const [copyText, setCopyText] = useState<String | JSX.Element>(
     <>
@@ -44,7 +28,7 @@ const PartnerPortal = ({
   );
   const handleCopyLink = () => {
     copyToClipboard(referralLink);
-    setCopyText("LinkCopied!");
+    setCopyText("Link Copied!");
     setTimeout(
       () =>
         setCopyText(
@@ -53,146 +37,68 @@ const PartnerPortal = ({
             <LinkIcon className="h-5 w-5 text-white" />
           </>
         ),
-      300
+      1000
     );
   };
 
   const [copyPartnerText, setCopyPartnerText] = useState<String | JSX.Element>(
-    <LinkIcon className="h-5 w-5 text-white" />
+    <>
+      Affiliate Link <LinkIcon className="h-5 w-5 text-white inline" />
+    </>
   );
   const handleCopyPartnerLink = () => {
     copyToClipboard(
       `${process.env.NEXT_PUBLIC_BASE_URL}/${company.slug}/register?referralCode=${partner.referralCode}`
     );
-    setCopyPartnerText("LinkCopied!");
+    setCopyPartnerText("Link Copied!");
     setTimeout(
-      () => setCopyPartnerText(<LinkIcon className="h-5 w-5 text-white" />),
-      300
+      () =>
+        setCopyPartnerText(
+          <>
+            Affiliate Link <LinkIcon className="h-5 w-5 text-white inline" />
+          </>
+        ),
+      1000
     );
+  };
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    onConfirm: () => {},
+    message: "",
+  });
+
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      ...confirmModal,
+      isOpen: false,
+    });
+  };
+
+  const handleDeleteLoan = async (id) => {
+    const res = await fetch(`/api/loans/${id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      alert("Loan deleted successfully");
+    }
+  };
+
+  const confirmDeleteLoan = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      onConfirm: () => {
+        handleDeleteLoan(id);
+        closeConfirmModal();
+      },
+      message: "Are you sure you want to delete this loan?",
+    });
   };
 
   return (
     <PageContainer>
       <Column col={8}>
-        {/* My Loans Panel */}
-        <div className="bg-white shadow rounded-lg flex flex-col flex-grow">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
-            Loans
-          </h2>
-          <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Property Address
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    View
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loans.length ? (
-                  loans.map((loan) => (
-                    <tr key={loan.id}>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        {loan.address.addressLine1}
-                      </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        ${loan.loanAmount.toLocaleString()}
-                      </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        <div className="p-1">
-                          {LoanStatusLabels[loan.status]}
-                        </div>
-                      </td>
-                      <td className="text-center py-2 px-4 whitespace-nowrap">
-                        <button
-                          onClick={() => router.push(`/loans/${loan.id}`)}
-                        >
-                          <EyeIcon className="h-5 w-5 text-gray-500 hover:text-gray-900" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      className="py-2 px-4 whitespace-nowrap text-center"
-                      colSpan={4}
-                    >
-                      <div>No loans yet</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {/* Partner Loans Panel */}
-        <div className="bg-white shadow overflow-hidden rounded-lg flex flex-col flex-grow">
-          <h2 className="text-lg font-semibold text-gray-900 mb-2 pt-2 px-4">
-            Partner Loans
-          </h2>
-          <div className="overflow-x-auto flex-grow flex flex-col items-start gap-4">
-            <table className="min-w-full bg-white">
-              <thead>
-                <tr>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Property Address
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Amount
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="py-2 px-4 border-b border-gray-300 bg-gray-100 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Referred By
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {referredLoans ? (
-                  referredLoans.map((loan) => (
-                    <tr key={loan.id}>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        {loan.address.addressLine1}
-                      </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        ${loan.loanAmount.toLocaleString()}
-                      </td>
-                      <td className="py-2 px-4 whitespace-nowrap">
-                        <div className="p-1">
-                          {LoanStatusLabels[loan.status]}
-                        </div>
-                      </td>
-                      <td className="py-2 px-4 whitespace-nowrap text-center">
-                        {/* @ts-ignore */}
-                        {loan.partner ? loan.partner.name : "-"}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      className="py-2 px-4 whitespace-nowrap text-center"
-                      colSpan={4}
-                    >
-                      <div>No loans yet</div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <LoansTable affiliates={affiliates} partner={partner} />
       </Column>
       <Column col={4}>
         {/* Refer a Partner Panel */}
@@ -248,8 +154,8 @@ const PartnerPortal = ({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {partners.length ? (
-                  partners.map((partner) => (
+                {affiliates.length ? (
+                  affiliates.map((partner) => (
                     <tr key={partner.id}>
                       <td className="py-2 px-4 whitespace-nowrap">
                         {partner.name}
@@ -262,7 +168,7 @@ const PartnerPortal = ({
                 ) : (
                   <tr>
                     <td
-                      className="py-2 px-4 whitespace-nowrap text-center"
+                      className="py-2 whitespace-nowrap text-center"
                       colSpan={2}
                     >
                       <div>No referred partners yet</div>
@@ -279,7 +185,8 @@ const PartnerPortal = ({
             Affiliate Commissions
           </h2>
           <ul className="divide-y divide-gray-200">
-            {referralLoans.map((bonus, index) => (
+            <li className="pb-2">Coming Soon!</li>
+            {/* {referralLoans.map((bonus, index) => (
               <li
                 key={index}
                 className="py-2 flex justify-between items-center"
@@ -287,7 +194,7 @@ const PartnerPortal = ({
                 <span>{bonus.name}</span>
                 <span className="text-green-500">${bonus.amount}</span>
               </li>
-            ))}
+            ))} */}
           </ul>
         </div>
       </Column>
@@ -310,6 +217,12 @@ const PartnerPortal = ({
           </ul>
         </div>
       </Column>
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => closeConfirmModal()}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+      />
     </PageContainer>
   );
 };

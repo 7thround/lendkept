@@ -1,3 +1,6 @@
+import { User } from "@prisma/client";
+import { sendEmail } from "../utils";
+
 const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
   const handleChange = async (e) => {
     const loanAdminId = e.target.value;
@@ -5,7 +8,6 @@ const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
       ...loan,
       loanAdminId,
     };
-    console.log("Payload:", payload);
     const response = await fetch(`/api/loans/${loan.id}`, {
       method: "PUT",
       headers: {
@@ -15,6 +17,20 @@ const LoanAdminPanel = ({ selectedAdmin, availableLoanAdmins, loan }) => {
     });
 
     if (response.ok) {
+      const newAdmin = availableLoanAdmins.find(
+        (admin) => admin.id === loanAdminId
+      );
+      if (newAdmin) {
+        await sendEmail({
+          to: availableLoanAdmins.find(
+            (admin: User) => admin.id === loanAdminId
+          ).email,
+          subject: "You have been assigned a new loan",
+          template: "LoanOfficerAdded",
+          payload: { loan },
+        });
+        console.log(`Email sent to ${newAdmin.email}`);
+      }
       const updatedLoan = await response.json();
       console.log("Loan updated:", updatedLoan);
       window.location.reload();

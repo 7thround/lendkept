@@ -1,7 +1,7 @@
-import { NextApiRequest, NextApiResponse } from "next";
-import bcrypt from "bcrypt";
-import prisma from "../../../lib/prisma";
 import { User } from "@prisma/client";
+import bcrypt from "bcrypt";
+import { NextApiRequest, NextApiResponse } from "next";
+import prisma from "../../../lib/prisma";
 import { authenticate, authorize } from "../../../src/middleware/auth";
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -75,7 +75,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           data: {
             name,
             phone,
-            logo,
             addressId: address.id,
           },
         });

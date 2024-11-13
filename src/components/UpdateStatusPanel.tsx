@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LoanStatusLabels } from "../constants";
+import ConfirmationModal from "./common/ConfirmationModal";
 
 const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
@@ -15,10 +16,6 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
 
   const handleConfirmUpdate = () => {
     updateStatus(selectedStatus);
-    setIsModalOpen(false);
-  };
-
-  const handleCancel = () => {
     setIsModalOpen(false);
   };
 
@@ -39,38 +36,27 @@ const UpdateStatusPanel = ({ currentStatus, updateStatus }) => {
         </select>
         <button
           onClick={handleUpdateClick}
-          className="p-2 bg-[#e74949] text-white rounded"
+          className="p-2 bg-[#e74949] text-white rounded hover:brightness-110"
         >
           Update
         </button>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-4 rounded shadow-lg">
-            <h4 className="text-lg font-semibold mb-4">
-              Confirm Status Update
-            </h4>
+        <ConfirmationModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setSelectedStatus(currentStatus);
+            setIsModalOpen(false);
+          }}
+          onConfirm={handleConfirmUpdate}
+          message={
             <p>
-              Are you sure you want to update the loan status to "
-              {LoanStatusLabels[selectedStatus]}"?
+              Are you sure you want to update the status to{" "}
+              <strong>{LoanStatusLabels[selectedStatus]}</strong>?
             </p>
-            <div className="flex justify-end space-x-4 mt-4">
-              <button
-                onClick={handleCancel}
-                className="p-2 bg-gray-300 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmUpdate}
-                className="p-2 bg-[#e74949] text-white rounded"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
+          }
+        />
       )}
     </div>
   );

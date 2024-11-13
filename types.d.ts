@@ -1,4 +1,4 @@
-import { Borrower, Loan } from "@prisma/client";
+import { Address, Borrower, Loan } from "@prisma/client";
 
 type LoanWithAddress = Loan & {
   address: {
@@ -11,3 +11,8 @@ type LoanWithAddress = Loan & {
   };
   borrowers: Borrower[];
 };
+
+type PreLoadedLoanData = Loan & Address & Borrower & Note[] & Partner & Company;
+
+type PartnerData = Partner & { company: Company } & { affiliates: Partner[] };
+type CompanyData = Company & { partners: PartnerData[] };

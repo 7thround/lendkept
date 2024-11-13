@@ -1,8 +1,8 @@
-import { useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/router";
-import jwt from "jsonwebtoken";
 import cookie from "cookie";
+import jwt from "jsonwebtoken";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
 export const getServerSideProps = async (context) => {
   try {
@@ -20,7 +20,7 @@ export const getServerSideProps = async (context) => {
       };
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
       userId: number;
       role: string;
     };

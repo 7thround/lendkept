@@ -1,38 +1,44 @@
 import { PencilSquareIcon } from "@heroicons/react/20/solid";
+import {
+  Borrower,
+  Company,
+  Loan,
+  LoanType,
+  Partner,
+  User,
+} from "@prisma/client";
+import axios, { AxiosResponse } from "axios";
+import cookie from "cookie";
+import { useRouter } from "next/router";
 import React, { useState } from "react";
+import { getUser } from "../..";
+import prisma from "../../../lib/prisma";
+import ConfirmationModal from "../../../src/components/common/ConfirmationModal";
+import LoanStatusLabel from "../../../src/components/common/LoanStatusLabel";
 import {
   Column,
+  FullScreenLoader,
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
-import prisma from "../../../lib/prisma";
-import { Company, LoanType, Note, Partner, User } from "@prisma/client";
-import { getUser } from "../..";
-import cookie from "cookie";
-import { LoanWithAddress } from "../../../types";
 import LoanAdminPanel from "../../../src/components/LoanAdminPanel";
+import LoanDetails from "../../../src/components/LoanDetails";
 import LoanTimeline from "../../../src/components/LoanTimeline";
 import NotesSection from "../../../src/components/NotesSection";
 import UpdateStatusPanel from "../../../src/components/UpdateStatusPanel";
+import { LoanTypeLabels } from "../../../src/constants";
+import { sendEmail } from "../../../src/utils";
+import { fetchLoanDetails } from "../../../src/utils/api";
+import { PreLoadedLoanData } from "../../../types";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
 
-  const loan = await prisma.loan.findUnique({
-    where: { id: Number(id) },
-    include: {
-      address: true,
-      borrowers: true,
-    },
-  });
-
-  const serializedLoan = {
-    ...loan,
-    borrowers: loan.borrowers.map((borrower) => ({
-      ...borrower,
-      createdAt: borrower.createdAt.toISOString(),
-    })),
-  };
-
+  const loan = await fetchLoanDetails(Number(id));
+  if (!loan) {
+    return {
+      notFound: true,
+    };
+  }
   const availableLoanAdmins = await prisma.user.findMany({
     where: {
       companyId: loan.companyId,
@@ -43,33 +49,6 @@ export const getServerSideProps = async (context) => {
       id: true,
       email: true,
     },
-  });
-  const notes = await prisma.note.findMany({
-    where: { loanId: Number(id) },
-    orderBy: { createdAt: "asc" },
-    include: {
-      sender: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
-
-  // Convert the Date object to a string
-  const serializedNotes = notes.map((note) => ({
-    ...note,
-    createdAt: note.createdAt.toISOString(),
-  }));
-
-  let partner = null;
-  if (loan.partnerId) {
-    partner = await prisma.partner.findUnique({
-      where: { id: loan.partnerId },
-    });
-  }
-  const company = await prisma.company.findUnique({
-    where: { id: loan.companyId },
   });
 
   const { req } = context;
@@ -85,53 +64,133 @@ export const getServerSideProps = async (context) => {
       },
     };
   }
-
+  const user = await getUser(token);
   return {
     props: {
-      loan: serializedLoan,
-      notes: serializedNotes,
-      partner,
-      company,
-      user: await getUser(token),
+      preloadedLoan: JSON.parse(JSON.stringify(loan)),
+      user: JSON.parse(JSON.stringify(user)),
       availableLoanAdmins,
+      company:
+        user?.role === "COMPANY"
+          ? JSON.parse(JSON.stringify(user.company))
+          : null,
+      partner:
+        user?.role === "PARTNER"
+          ? JSON.parse(JSON.stringify(user.partner))
+          : null,
     },
   };
 };
 
 const LoanPage = ({
-  loan,
-  notes,
-  partner,
-  company,
+  preloadedLoan,
   user,
   availableLoanAdmins,
 }: {
-  loan: LoanWithAddress;
-  notes: Note[];
-  partner: Partner;
-  company: Company;
+  preloadedLoan: PreLoadedLoanData;
   user: User;
   availableLoanAdmins: User[];
 }) => {
+  const router = useRouter();
+  const { partner, company } = preloadedLoan;
+  const [loan, setLoan] = useState<PreLoadedLoanData>(preloadedLoan);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editSection, setEditSection] = useState("");
   const [formData, setFormData] = useState<any>({});
-  const addNote = async (note) => {
-    const response = await fetch(`/api/notes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(note),
-    });
-
+  const [loading, setLoading] = useState(false);
+  const [isDeletingLoan, setIsDeletingLoan] = useState(false);
+  const fetchLoan = async () => {
+    const response = await fetch(`/api/loans/${loan.id}`);
     if (response.ok) {
-      const newNote = await response.json();
-      window.location.reload();
-      console.log("Note added:", newNote);
+      const updatedLoan = await response.json();
+      console.log("Loan updated:", updatedLoan);
+      setLoan(updatedLoan);
     }
   };
-  const updateStatus = async (newStatus) => {
+  const deleteLoan = async () => {
+    setLoading(true);
+    setIsDeletingLoan(true);
+    try {
+      const response = await fetch(`/api/loans/${loan.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        console.log("Loan deleted");
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Error deleting loan:", error);
+    }
+    setLoading(false);
+  };
+  const addNote = async (note: {
+    text: string;
+    loanId: string;
+    senderId: string;
+    createdAt: Date;
+  }) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/notes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(note),
+      });
+
+      if (response.ok) {
+        const newNote = await response.json();
+        const recipientList = [company as Company, partner as Partner];
+        const sendList = recipientList.filter(
+          (recipient) => note.senderId !== recipient.id
+        );
+        sendList.forEach(async (recipient) => {
+          await sendEmail({
+            to: recipient.email as string,
+            subject: "New Note Added",
+            template: "NewNote",
+            payload: { note: newNote, loan },
+          });
+          if (assignedOfficer) {
+            await sendEmail({
+              to: assignedOfficer.email as string,
+              subject: "New Note Added",
+              template: "NewNote",
+              payload: { note: newNote, loan },
+            });
+          }
+          console.log(`Email sent to ${recipient.email}`);
+        });
+        console.log("Note added:", newNote);
+        await fetchLoan();
+        console.log("Loan fetched");
+      }
+    } catch (error) {
+      console.error("Error adding note:", error);
+    }
+    setLoading(false);
+  };
+  const deleteNote = async (noteId) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/notes/${noteId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        console.log("Note deleted");
+        await fetchLoan();
+      }
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+    setLoading(false);
+  };
+  const handleUpdateLoan = async () => {
+    console.log("Updating loan...");
+    setLoading(true);
     try {
       const response = await fetch(`/api/loans/${loan.id}`, {
         method: "PUT",
@@ -139,21 +198,127 @@ const LoanPage = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...loan,
-          status: newStatus,
+          addressId: loan.addressId,
+          ...formData,
         }),
       });
 
       if (response.ok) {
         const updatedLoan = await response.json();
+        console.log("Loan updated:", updatedLoan);
+        await fetchLoan();
+      }
+    } catch (error) {
+      console.error("Error updating loan:", error);
+    } finally {
+      setLoading(false);
+      setIsModalOpen(false);
+    }
+  };
+  const handleUpdateBorrowers = async (borrower: "borrower" | "coBorrower") => {
+    console.log("Updating borrower...");
+    setLoading(true);
+    const borrowerId = loan.borrowers[borrower === "borrower" ? 0 : 1].id;
+    const borrowerData = {
+      firstName: formData[`${borrower}FirstName`],
+      lastName: formData[`${borrower}LastName`],
+      email: formData[`${borrower}Email`],
+      phone: formData[`${borrower}Phone`],
+      employer: formData[`${borrower}Employer`],
+      position: formData[`${borrower}Position`],
+      income: formData[`${borrower}Income`],
+      credit: formData[`${borrower}Credit`],
+    };
+    try {
+      const response = await fetch(`/api/borrowers/${borrowerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(borrowerData),
+      });
+
+      if (response.ok) {
+        const updatedBorrower = await response.json();
+        console.log("Borrower updated:", updatedBorrower);
+        await fetchLoan();
+      } else {
+        console.error("Failed to update borrower");
+      }
+    } catch (error) {
+      console.error("Error updating borrower:", error);
+    } finally {
+      setLoading(false);
+      setIsModalOpen(false);
+    }
+  };
+  const updateStatus = async (newStatus) => {
+    setLoading(true);
+    try {
+      const response: AxiosResponse<Loan & { borrowers: Borrower[] }> =
+        await axios.put(`/api/loans/${loan.id}`, {
+          ...loan,
+          status: newStatus,
+        });
+
+      if (response.status === 200) {
+        const updatedLoan = response.data;
+        if (updatedLoan.status === "LOAN_FUNDED") {
+          await sendEmail({
+            to: company.email,
+            subject: "A Loan Has Been Funded",
+            template: "LoanFunded",
+            payload: {
+              loan: updatedLoan,
+            },
+          });
+          if (partner) {
+            await sendEmail({
+              to: partner.email,
+              subject: "Your Loan Has Been Funded",
+              template: "LoanFunded",
+              payload: {
+                loan: updatedLoan,
+              },
+            });
+          }
+        } else {
+          await sendEmail({
+            to: company.email,
+            subject: "Loan Status Update",
+            template: "LoanStatusUpdated",
+            payload: {
+              loan: updatedLoan,
+            },
+          });
+          if (partner) {
+            await sendEmail({
+              to: partner.email,
+              subject: "Loan Status Update",
+              template: "LoanStatusUpdated",
+              payload: {
+                loan: updatedLoan,
+              },
+            });
+          }
+        }
+        await sendEmail({
+          to: updatedLoan.borrowers[0].email,
+          subject: "Loan Status Update",
+          template: "LoanStatusUpdated",
+          payload: {
+            loan: updatedLoan,
+          },
+        });
         console.log("Status updated:", updatedLoan);
-        window.location.reload();
+        await fetchLoan();
       } else {
         console.error("Failed to update status");
       }
     } catch (error) {
       console.error("Error updating status:", error);
     }
+    setLoading(false);
   };
   const openModal = (section) => {
     setEditSection(section);
@@ -193,98 +358,70 @@ const LoanPage = ({
     console.log(e.target.name, e.target.value);
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-  const handleUpdateLoan = async () => {
-    try {
-      const response = await fetch(`/api/loans/${loan.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          addressId: loan.addressId,
-          ...formData,
-        }),
-      });
-
-      if (response.ok) {
-        const updatedLoan = await response.json();
-        console.log("Loan updated:", updatedLoan);
-        window.location.reload();
-      } else {
-        console.error("Failed to update loan");
-      }
-    } catch (error) {
-      console.error("Error updating loan:", error);
-    } finally {
-      setIsModalOpen(false);
-    }
-  };
-
-  const handleUpdateBorrowers = async (borrower: "borrower" | "coBorrower") => {
-    const borrowerId = loan.borrowers[borrower === "borrower" ? 0 : 1].id;
-    const borrowerData = {
-      firstName: formData[`${borrower}FirstName`],
-      lastName: formData[`${borrower}LastName`],
-      email: formData[`${borrower}Email`],
-      phone: formData[`${borrower}Phone`],
-      employer: formData[`${borrower}Employer`],
-      position: formData[`${borrower}Position`],
-      income: formData[`${borrower}Income`],
-      credit: formData[`${borrower}Credit`],
-    };
-    try {
-      const response = await fetch(`/api/borrowers/${borrowerId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(borrowerData),
-      });
-
-      if (response.ok) {
-        const updatedBorrower = await response.json();
-        console.log("Borrower updated:", updatedBorrower);
-        window.location.reload();
-      } else {
-        console.error("Failed to update borrower");
-      }
-    } catch (error) {
-      console.error("Error updating borrower:", error);
-    } finally {
-      setIsModalOpen(false);
-    }
-  };
   const loanLink = `${process.env.NEXT_PUBLIC_BASE_URL}/loans/${loan.id}/read_only?access_code=${loan.accessCode}`;
   const isAdmin = user.role === "COMPANY" || user.role === "LOAN_ADMIN";
+  const assignedOfficer = availableLoanAdmins.filter(
+    (admin) => admin.id === loan.loanAdminId
+  )[0];
+
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isModalOpen && e.key === "Enter") {
+        editSection === "borrower" || editSection === "coBorrower"
+          ? handleUpdateBorrowers(editSection)
+          : handleUpdateLoan();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isModalOpen, editSection, formData]);
+
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    onConfirm: () => {},
+    message: "",
+  });
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      ...confirmModal,
+      isOpen: false,
+    });
+  };
+
   return (
     <>
+      {(!loan || loading) && <FullScreenLoader />}
       <PageContainer>
         <Column col={isAdmin ? 8 : 12}>
-          <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
-            <div className="flex justify-between items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
+          <div className="bg-white shadow rounded-lg p-4 flex-grow">
+            <div className="flex justify-between items-center ">
+              <h1 className="text-lg font-semibold text-gray-900">
                 Loan Details
               </h1>
               <button
-                className="px-2 py-1 mt-1 border border-[#e74949] text-[#e74949] rounded-lg flex items-center space-x-2 text-sm"
+                className="px-2 py-1 border border-[#e74949] text-[#e74949] rounded flex items-center space-x-2 text-sm hover:brightness-110"
                 onClick={(e) => {
                   navigator.clipboard.writeText(loanLink);
                   (e.target as HTMLButtonElement).textContent = "Copied!";
                   setTimeout(() => {
-                    (e.target as HTMLButtonElement).textContent =
-                      "Share Loan Link";
+                    (e.target as HTMLButtonElement).textContent = "Share Link";
                   }, 1000);
                 }}
               >
-                Share Loan Link
+                Share Link
               </button>
             </div>
-            <div className="text-center font-semibold pb-2">Loan Timeline</div>
+            <LoanDetails loan={loan} assignedOfficer={assignedOfficer} />
+            <div className="text-center font-semibold pb-2 text-xl mt-4">
+              Loan Status
+            </div>
             <LoanTimeline currentStatus={loan.status} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
-                  Client Information
+                  Borrower Information
                 </h2>
                 <div className="flex gap-4 flex-col">
                   {loan.borrowers?.map((borrower, index) => (
@@ -315,16 +452,20 @@ const LoanPage = ({
                       <p>
                         <strong>Credit:</strong> {borrower.credit}
                       </p>
-                      <button
-                        onClick={() =>
-                          openModal(
-                            `${index === 0 ? "borrower" : "coBorrower"}`
-                          )
-                        }
-                        className="text-[#e74949]"
-                      >
-                        <PencilSquareIcon className="h-5 w-5" />
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() =>
+                            openModal(
+                              `${index === 0 ? "borrower" : "coBorrower"}`
+                            )
+                          }
+                          className="text-[#e74949] mt-2"
+                        >
+                          <div className="flex items-center gap-1">
+                            Edit <PencilSquareIcon className="h-5 w-5" />
+                          </div>
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -332,12 +473,14 @@ const LoanPage = ({
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
                   Property Address
-                  <button
-                    onClick={() => openModal("address")}
-                    className="text-[#e74949]"
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => openModal("address")}
+                      className="text-[#e74949]"
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                  )}
                 </h2>
                 <p>
                   <strong>Line 1:</strong> {loan.address.addressLine1}
@@ -358,27 +501,30 @@ const LoanPage = ({
               <div className="bg-gray-100 p-4 rounded-lg">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
                   Loan Details
-                  <button
-                    onClick={() => openModal("loan")}
-                    className="text-[#e74949]"
-                  >
-                    <PencilSquareIcon className="h-5 w-5" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => openModal("loan")}
+                      className="text-[#e74949]"
+                    >
+                      <PencilSquareIcon className="h-5 w-5" />
+                    </button>
+                  )}
                 </h2>
                 <p>
-                  <strong>Type:</strong> {loan.loanType}
+                  <strong>Type:</strong> {LoanTypeLabels[loan.loanType]}
                 </p>
                 <p>
                   <strong>Amount:</strong> ${loan.loanAmount.toLocaleString()}
                 </p>
                 <p>
-                  <strong>Status:</strong> {loan.status}
+                  <strong>Status:</strong>{" "}
+                  <LoanStatusLabel status={loan.status} />
                 </p>
                 <p>
                   <strong>Paid:</strong> {loan.paid ? "Yes" : "No"}
                 </p>
                 {/* Loan Admins Panel */}
-                {user.role === "COMPANY" && (
+                {isAdmin && (
                   <LoanAdminPanel
                     availableLoanAdmins={availableLoanAdmins}
                     selectedAdmin={
@@ -403,6 +549,23 @@ const LoanPage = ({
                   <strong>Company</strong> {company.name}
                 </p>
               </div>
+            </div>
+            <div className="flex justify-end mt-2">
+              {isAdmin && (
+                <button
+                  onClick={() =>
+                    setConfirmModal({
+                      isOpen: true,
+                      onConfirm: deleteLoan,
+                      message: "Are you sure you want to delete this loan?",
+                    })
+                  }
+                  className="text-[#e74949] py-2 px-4 rounded-lg disabled:opacity-70 text-sm hover:underline"
+                  disabled={loading}
+                >
+                  {isDeletingLoan ? "Deleting..." : "Delete this loan"}
+                </button>
+              )}
             </div>
           </div>
         </Column>
@@ -445,9 +608,10 @@ const LoanPage = ({
         )}
         <Column col={12}>
           <NotesSection
-            notes={notes}
+            notes={loan.notes}
             loanId={loan.id}
             onAddNote={addNote}
+            onDeleteNote={deleteNote}
             sender={user}
           />
         </Column>
@@ -703,14 +867,23 @@ const LoanPage = ({
                     ? handleUpdateBorrowers(editSection)
                     : handleUpdateLoan()
                 }
-                className="bg-[#e74949] text-white py-2 px-4 rounded-lg"
+                className="bg-[#e74949] text-white py-2 px-4 rounded-lg disabled:opacity-70"
+                disabled={loading}
               >
-                Save
+                {editSection === "borrower" || editSection === "coBorrower"
+                  ? "Update Borrower"
+                  : "Update Loan"}
               </button>
             </div>
           </div>
         </div>
       )}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => closeConfirmModal()}
+        onConfirm={confirmModal.onConfirm}
+        message={confirmModal.message}
+      />
     </>
   );
 };

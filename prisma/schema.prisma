@@ -16,7 +16,7 @@ model Partner {
   referralCode       String   @unique
   referringPartner   Partner? @relation("Referrals", fields: [referringPartnerId], references: [id])
   referringPartnerId String? 
-  referredPartners   Partner[] @relation("Referrals")
+  affiliates         Partner[] @relation("Referrals")
   company            Company  @relation(fields: [companyId], references: [id])
   companyId          String
   loans              Loan[]
@@ -28,16 +28,16 @@ model Partner {
 model Company {
   id           String   @default(uuid()) @id
   name         String
-  logo         String?
   phone        String
   partners     Partner[]
   loans        Loan[]
   users        User[]
   address      Address?  @relation(fields: [addressId], references: [id])
   addressId    String?   @unique
-  slug         String   @unique @default(uuid())
+  slug         String    @unique @default(uuid())
   url          String?
   primaryColor String?
+  email        String?
 }
 
 model Note {
@@ -64,6 +64,7 @@ model User {
   partnerId String?  @unique
   notes     Note[]
   loans     Loan[]   @relation("LoanAdmin")
+  profileImage       Bytes?
 }
 
 enum Role {

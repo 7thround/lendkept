@@ -1,4 +1,4 @@
-import { NextApiResponse, NextApiRequest } from "next";
+import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "../../../lib/prisma";
 import { authenticate, authorize } from "../../../src/middleware/auth";
 
@@ -49,12 +49,46 @@ const updateCompany = async (
   res: NextApiResponse,
   id: string
 ) => {
-  const { name } = req.body;
+  const {
+    url,
+    phone,
+    name,
+    email,
+    profileImage,
+    user,
+    address: {
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      zip,
+    }, } = req.body;
 
   const company = await prisma.company.update({
-    where: { id },
-    data: { name },
+    where: { id: String(id) },
+    data: {
+      url,
+      phone,
+      name,
+      email,
+      address: {
+        update: {
+          addressLine1,
+          addressLine2,
+          city,
+          state,
+          zip,
+        },
+      },
+    },
   });
+
+  if (user) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { profileImage, name },
+    });
+  }
 
   res.status(200).json(company);
 };

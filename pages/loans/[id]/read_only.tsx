@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from "react";
+import { Company, Partner } from "@prisma/client";
+import cookie from "cookie";
+import { useEffect, useState } from "react";
+import { getUser } from "../..";
+import prisma from "../../../lib/prisma";
+import LoanStatusLabel from "../../../src/components/common/LoanStatusLabel";
 import {
   Column,
   PageContainer,
 } from "../../../src/components/Layout/PageParts";
-import prisma from "../../../lib/prisma";
-import { Company, Partner } from "@prisma/client";
-import { getUser } from "../..";
-import cookie from "cookie";
-import { LoanWithAddress } from "../../../types";
+import LoanDetails from "../../../src/components/LoanDetails";
 import LoanTimeline from "../../../src/components/LoanTimeline";
+import { LoanTypeLabels } from "../../../src/constants";
+import { LoanWithAddress } from "../../../types";
 
 export const getServerSideProps = async (context) => {
   const { id } = context.params;
@@ -21,6 +24,12 @@ export const getServerSideProps = async (context) => {
     },
   });
 
+  if (!loan) {
+    return {
+      notFound: true,
+    };
+  }
+
   const serializedLoan = {
     ...loan,
     borrowers: loan.borrowers.map((borrower) => ({
@@ -29,7 +38,7 @@ export const getServerSideProps = async (context) => {
     })),
   };
 
-  let partner = null;
+  let partner: Partner | null = null;
   if (loan.partnerId) {
     partner = await prisma.partner.findUnique({
       where: { id: loan.partnerId },
@@ -39,17 +48,32 @@ export const getServerSideProps = async (context) => {
     where: { id: loan.companyId },
   });
 
+  let loanAdmin: { id: string; name: string; email: string } | null = null;
+  if (loan.loanAdminId) {
+    loanAdmin = await prisma.user.findUnique({
+      where: {
+        id: loan.loanAdminId as string,
+      },
+      select: {
+        name: true,
+        id: true,
+        email: true,
+      },
+    });
+  }
+
   const { req } = context;
   const cookies = req.headers.cookie;
   const parsedCookies = cookie.parse(cookies || "");
   const token = parsedCookies.token;
-
+  const user = await getUser(token);
   return {
     props: {
       loan: serializedLoan,
       partner,
       company,
-      user: await getUser(token),
+      user: JSON.parse(JSON.stringify(user)),
+      loanAdmin,
     },
   };
 };
@@ -58,10 +82,12 @@ const LoanPage = ({
   loan,
   partner,
   company,
+  loanAdmin,
 }: {
   loan: LoanWithAddress;
   partner: Partner;
   company: Company;
+  loanAdmin: { name: string; email: string; id: number };
 }) => {
   const [accessCode, setAccessCode] = useState("");
   useEffect(() => {
@@ -85,7 +111,7 @@ const LoanPage = ({
       <PageContainer>
         <Column col={12}>
           <div className="bg-white shadow rounded-lg p-4 flex-grow">
-            <h1 className="text-xl font-semibold text-gray-900 mb-4">
+            <h1 className="text-lg font-semibold text-gray-900 mb-4">
               Loan Details
             </h1>
             <p className="text-gray-700">Loan not found</p>
@@ -100,7 +126,7 @@ const LoanPage = ({
       <PageContainer>
         <Column col={12}>
           <div className="bg-white shadow rounded-lg p-4 items-center text-center">
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">
+            <h1 className="text-lg font-semibold text-gray-900 mb-2">
               Loan Details
             </h1>
             <p className="text-gray-700">
@@ -129,14 +155,15 @@ const LoanPage = ({
       <PageContainer>
         <Column col={12}>
           <div className="bg-white shadow rounded-lg pt-2 p-4 flex-grow">
-            <h1 className="text-xl text-center font-semibold pb-2">
-              Loan Timeline
-            </h1>
+            <LoanDetails loan={loan} assignedOfficer={loanAdmin} />
+            <div className="text-center font-semibold pb-2 text-xl mt-4">
+              Loan Status
+            </div>
             <LoanTimeline currentStatus={loan.status} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-100 p-4 rounded-lg ">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2 flex justify-between">
-                  Client Information
+                  Borrower Information
                 </h2>
                 <div className="flex gap-4 flex-col">
                   {loan.borrowers.map((borrower, index) => (
@@ -162,7 +189,7 @@ const LoanPage = ({
                       </p>
                       <p>
                         <strong>Income:</strong> $
-                        {borrower.income.toLocaleString()}
+                        {borrower.income?.toLocaleString()}
                       </p>
                       <p>
                         <strong>Credit:</strong> {borrower.credit}
@@ -196,16 +223,14 @@ const LoanPage = ({
                   Loan Details
                 </h2>
                 <p>
-                  <strong>Type:</strong> {loan.loanType}
+                  <strong>Type:</strong> {LoanTypeLabels[loan.loanType]}
                 </p>
                 <p>
                   <strong>Amount:</strong> ${loan.loanAmount.toLocaleString()}
                 </p>
                 <p>
-                  <strong>Status:</strong> {loan.status}
-                </p>
-                <p>
-                  <strong>Paid:</strong> {loan.paid ? "Yes" : "No"}
+                  <strong>Status:</strong>{" "}
+                  <LoanStatusLabel status={loan.status} />
                 </p>
               </div>
               <div className="bg-gray-100 p-4 rounded-lg">
