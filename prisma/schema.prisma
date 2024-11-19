@@ -43,6 +43,7 @@ model Company {
 model Note {
   id         String    @default(uuid()) @id
   text       String
+  docName	String?
   loan       Loan?     @relation(fields: [loanId], references: [id], onDelete: Cascade)
   loanId     Int?
   sender     User      @relation(fields: [senderId], references: [id])
