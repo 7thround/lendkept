@@ -144,11 +144,7 @@ const LoanPage = ({
 
 			if (response.ok) {
 				const newNote = await response.json();
-				console.log("not sending email");
-				console.log("Note added:", newNote);
-				await fetchLoan();
-				console.log("Loan fetched");
-				return;
+
 				const recipientList = [company as Company, partner as Partner];
 				const sendList = recipientList.filter(
 					(recipient) => note.senderId !== recipient.id
@@ -170,7 +166,9 @@ const LoanPage = ({
 					}
 					console.log(`Email sent to ${recipient.email}`);
 				});
-
+				console.log("Note added:", newNote);
+				await fetchLoan();
+				console.log("Loan fetched");
 			}
 		} catch (error) {
 			console.error("Error adding note:", error);
